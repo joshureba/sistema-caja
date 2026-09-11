@@ -60,9 +60,12 @@ export function Layout() {
     <div className="min-h-screen lg:flex">
       {/* Barra lateral (escritorio) */}
       <aside className="no-imprimir hidden w-64 shrink-0 flex-col bg-marca-800 lg:fixed lg:inset-y-0 lg:flex">
-        <div className="px-5 py-5">
-          <p className="text-lg font-bold text-white">Sistema de Caja</p>
-          <p className="text-xs text-marca-200">Caja diaria y caja chica</p>
+        <div className="flex items-center gap-3 px-5 py-5">
+          <img src="/icono-192.png" alt="" className="size-10 rounded-lg bg-white p-1" />
+          <div>
+            <p className="text-lg font-bold text-white">Sistema de Caja</p>
+            <p className="text-xs text-marca-200">Caja diaria y caja chica</p>
+          </div>
         </div>
         {navegacion}
         {bloqueUsuario}
