@@ -36,7 +36,7 @@ Ambos contienen los mismos 83 movimientos (01 al 10 de septiembre de 2026) y la 
 |---|---|---|
 | INGRESO | Cobro de cliente. Suma a caja diaria solo la parte en efectivo. | `monto_digital`, `monto_efectivo` |
 | EGRESO | Gasto. Resta de caja chica. | `monto` |
-| REPOSICION_CAJA_CHICA | Suma a caja chica. Si el origen es la caja diaria, también resta de ella. | `monto`, `origen` (BANCO / CAJA_DIARIA) |
+| REPOSICION_CAJA_CHICA | Suma a caja chica. Solo desde el banco: las dos cajas son independientes (el origen CAJA_DIARIA queda solo por compatibilidad histórica). | `monto`, `origen` (BANCO) |
 | RETIRO | Retiro de efectivo hacia banco u otro destino. Resta de la caja indicada (diaria o chica). No cuenta como egreso. | `monto`, `caja_retiro` (DIARIA / CHICA), `destino` |
 
 Nota: el Excel tenía dos "retiros de excedente" registrados como egresos: 04/09 por S/ 2,349.30 (antes del corte, sale de la caja diaria) y 08/09 por S/ 962.60 (el Excel lo descontaba de la caja chica, y así se importa). Por eso el saldo de caja chica al 10/09 sigue siendo S/ 3,595.30, igual que en el Excel.

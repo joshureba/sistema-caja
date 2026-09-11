@@ -357,7 +357,8 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
             {tipo === 'REPOSICION_CAJA_CHICA' && (
               <Campo etiqueta="Origen del dinero" requerido error={errors.origen?.message}>
                 <Selector {...register('origen')}>
-                  {ORIGENES_REPOSICION.map((o) => (
+                  {/* Las cajas son independientes: la caja chica solo se repone desde el banco. */}
+                  {ORIGENES_REPOSICION.filter((o) => o === 'BANCO' || movimiento?.origen === o).map((o) => (
                     <option key={o} value={o}>
                       {ETIQUETA_ORIGEN[o]}
                     </option>
