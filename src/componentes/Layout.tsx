@@ -60,12 +60,12 @@ export function Layout() {
     <div className="min-h-screen lg:flex">
       {/* Barra lateral (escritorio) */}
       <aside className="no-imprimir hidden w-64 shrink-0 flex-col bg-marca-800 lg:fixed lg:inset-y-0 lg:flex">
-        <div className="flex items-center gap-3 px-5 py-5">
-          <img src="/icono-192.png" alt="" className="size-10 rounded-lg bg-white p-1" />
-          <div>
-            <p className="text-lg font-bold text-white">Sistema de Caja</p>
-            <p className="text-xs text-marca-200">Caja diaria y caja chica</p>
+        <div className="px-5 py-5">
+          <div className="rounded-xl bg-white px-3 py-2">
+            <img src="/logo-rebagliati.png" alt="Rebagliati Diplomados" className="mx-auto h-11 w-auto" />
           </div>
+          <p className="mt-3 text-base font-bold text-white">Sistema de Caja</p>
+          <p className="text-xs text-marca-200">Caja diaria y caja chica</p>
         </div>
         {navegacion}
         {bloqueUsuario}
@@ -73,7 +73,10 @@ export function Layout() {
 
       {/* Barra superior (móvil) */}
       <div className="no-imprimir sticky top-0 z-40 flex items-center justify-between bg-marca-800 px-4 py-3 lg:hidden">
-        <p className="font-bold text-white">Sistema de Caja</p>
+        <div className="flex items-center gap-2">
+          <img src="/logo-rebagliati.png" alt="" className="h-7 w-auto rounded bg-white px-1" />
+          <p className="font-bold text-white">Sistema de Caja</p>
+        </div>
         <button type="button" onClick={() => setAbierto((v) => !v)} className="rounded-md p-1 text-white" aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'}>
           {abierto ? <X className="size-6" /> : <Menu className="size-6" />}
         </button>

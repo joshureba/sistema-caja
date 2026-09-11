@@ -32,7 +32,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-marca-900 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl">
-        <img src="/icono-192.png" alt="" className="mb-4 size-16" />
+        <img src="/logo-rebagliati.png" alt="Rebagliati Diplomados" className="mb-4 h-14 w-auto" />
         <p className="text-xs font-semibold tracking-widest text-marca-500 uppercase">Sistema de Caja</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Iniciar sesión</h1>
         <p className="mt-1 text-sm text-slate-500">Caja diaria y caja chica del área.</p>
