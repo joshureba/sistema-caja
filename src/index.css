@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --color-marca-50: #eef3fb;
+  --color-marca-100: #d9e4f5;
+  --color-marca-200: #b3c9ea;
+  --color-marca-300: #7fa3d9;
+  --color-marca-400: #4a7cc4;
+  --color-marca-500: #2a5ba8;
+  --color-marca-600: #1d478c;
+  --color-marca-700: #143667;
+  --color-marca-800: #0b2c5d;
+  --color-marca-900: #081f42;
+}
+
+/* Paleta de gráficos (validada para daltonismo en modo claro) */
+:root {
+  --viz-surface: #fcfcfb;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-ink: #0b0b0b;
+  --viz-ink-2: #52514e;
+  --viz-serie-1: #2a78d6;
+  --viz-serie-2: #eb6834;
+  --viz-serie-3: #1baf7a;
+  --viz-bueno: #0ca30c;
+  --viz-alerta: #fab219;
+  --viz-critico: #d03b3b;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-slate-100 text-slate-800 antialiased;
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
