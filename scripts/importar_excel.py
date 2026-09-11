@@ -18,7 +18,7 @@ FILA_INICIO = 17
 
 PARAMETROS = {
     "caja_chica_min": 3000, "caja_chica_max": 5000, "caja_chica_alerta": 3500,
-    "base_caja_diaria": 500, "saldo_inicial_caja_chica": 5000, "fecha_corte": "2026-09-06",
+    "base_caja_diaria": 500, "saldo_inicial_caja_chica": 4767.90, "fecha_corte": "2026-09-11",
     "tolerancia_arqueo": 0.01, "hora_inicio_noche": "17:00",
 }
 INACTIVOS = {("COMPROBANTE", "SIN RE")}  # ya no se elige; el histórico lo conserva
@@ -28,6 +28,7 @@ CATALOGOS = {
     "CUENTA": ["CONSORCIO", "HUGO", "LUIS RIVERO", "MARIAFE"],
     "COMPROBANTE": ["BV", "FACT", "RE", "SIN RE", "SIN RI"],
 }
+CORTE_EXCEL = "2026-09-06"  # fecha en que el Excel empezó a descontar retiros de la caja chica
 ESTADOS = {"CON COMPROBANTE", "SIN COMPROBANTE", "PENDIENTE"}
 TURNOS = {"MAÑANA", "NOCHE"}
 SIN_DATO = {"NO SE HACE", "NO APLICA", "N/A", "-", "--"}
@@ -135,7 +136,7 @@ def leer_movimientos():
             if "RETIRO" in d and ("EXCEDENTE" in d or "EXDENTE" in d):
                 tipo = "RETIRO"
                 # Antes del corte había una sola caja; desde el corte el Excel descontaba estos retiros de la caja chica.
-                caja_retiro = "CHICA" if fecha >= PARAMETROS["fecha_corte"] else "DIARIA"
+                caja_retiro = "CHICA" if fecha >= CORTE_EXCEL else "DIARIA"
                 notas.append(f"registrado en el Excel como EGRESO; es un retiro de excedente (sale de caja {caja_retiro.lower()}), no un gasto")
             else:
                 tipo = "EGRESO"
@@ -232,10 +233,9 @@ def escribir_seed(movs):
         total = round(sum(float(d) * c for d, c in conteo.items()), 2)
         lineas.append("-- Conteo del arqueo del Excel: todo el efectivo junto, aún sin separar la base de la caja diaria.")
         lineas.append("insert into public.arqueos (jornada_id, caja, conteo, total_contado, total_teorico, diferencia, estado, observacion)")
-        lineas.append(f"select j.id, 'CHICA', {sql(json.dumps(conteo))}::jsonb, {total:.2f}, s.saldo, {total:.2f} - s.saldo,")
-        lineas.append("       case when abs(" + f"{total:.2f}" + " - s.saldo) <= (select tolerancia_arqueo from public.parametros where id = 1) then 'CUADRA' else 'REVISAR' end::public.estado_arqueo,")
-        lineas.append("       'Conteo importado del Excel: incluía todo el efectivo, sin separar la base de la caja diaria.'")
-        lineas.append(f"from public.jornadas j, (select coalesce(public.fn_saldo_caja_chica('{ultima}'), 0) as saldo) s")
+        lineas.append(f"select j.id, 'CHICA', {sql(json.dumps(conteo))}::jsonb, {total:.2f}, {total:.2f}, 0, 'CUADRA',")
+        lineas.append("       'Conteo del Excel: todo el efectivo del área. Define el fondo con el que arranca la caja chica el 11/09/2026.'")
+        lineas.append("from public.jornadas j")
         lineas.append(f"where j.fecha = '{ultima}'")
         lineas.append("on conflict (jornada_id, caja) do nothing;")
         lineas.append("")

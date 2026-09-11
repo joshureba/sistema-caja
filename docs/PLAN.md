@@ -25,10 +25,11 @@ Ambos contienen los mismos 83 movimientos (01 al 10 de septiembre de 2026) y la 
 
 ## 3. Reglas de negocio
 
-### Cajas
-- **Caja diaria**: cada jornada abre con la base configurada (S/ 500). Recibe el efectivo de los cobros del día. Al cierre se cuenta con el contador de denominaciones; el excedente sobre la base se retira (movimiento RETIRO, que no es gasto).
-- **Caja chica**: fondo fijo para gastos. Baja con EGRESOS y sube con REPOSICIONES. Debe mantenerse entre el mínimo y el máximo. Tiene su propio arqueo.
-- **Fecha de corte**: el saldo de caja chica se calcula desde la fecha de corte (06/09/2026) con el saldo inicial configurado (S/ 5,000).
+### Cajas (regla vigente desde el 11/09/2026)
+- Hasta el 10/09 todo el efectivo del área era un solo montón; el conteo del Excel de ese día, S/ 4,767.90, es el punto de partida.
+- **Caja chica** ("el bolsillo grande"): arranca el 11/09 con S/ 4,767.90, entrega S/ 500 una sola vez para formar la caja de recepción (registrado como RETIRO de caja chica) y desde entonces solo baja con EGRESOS y sube con REPOSICIONES. Las ventas nunca entran a la caja chica. Debe mantenerse entre el mínimo y el máximo y tiene su propio arqueo.
+- **Caja diaria (recepción)**: empieza con esos S/ 500 y solo crece con el efectivo de los cobros; su saldo se arrastra de un día al siguiente y nunca vuelve a la caja chica. Cada jornada abre con el efectivo con que cerró la anterior; al cierre se cuenta con el contador de denominaciones y se compara con el teórico. Un RETIRO de caja diaria (por ejemplo, al banco) es la única forma de que baje.
+- **Fecha de corte**: 11/09/2026. Antes de esa fecha el sistema muestra el histórico tal cual se registró, sin saldos de caja.
 
 ### Tipos de movimiento
 | Tipo | Efecto | Campos de monto |

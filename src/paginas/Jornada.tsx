@@ -14,7 +14,6 @@ import {
   formatearFecha,
   formatearSoles,
   hoyISO,
-  leerMonto,
   montoTotal,
   ordenarCronologico,
   resumenCajaDiaria,
@@ -35,8 +34,7 @@ export default function Jornada() {
   const actualizar = useActualizarJornada();
   const guardarArqueo = useGuardarArqueo();
 
-  const base = jornada.data ? aNumero(jornada.data.base_caja_diaria) : parametros.base_caja_diaria;
-  const resumen = useMemo(() => resumenCajaDiaria(movimientos, fecha, base), [movimientos, fecha, base]);
+  const resumen = useMemo(() => resumenCajaDiaria(movimientos, parametros, fecha), [movimientos, parametros, fecha]);
   const delDia = useMemo(() => ordenarCronologico(filtrarRango(movimientos, fecha, fecha)), [movimientos, fecha]);
   const arqueoDiaria = arqueos.data?.find((a) => a.caja === 'DIARIA');
 
@@ -50,7 +48,6 @@ export default function Jornada() {
   const resultado = useMemo(() => calcularArqueo(conteo, parametros.denominaciones, resumen.teorico, parametros.tolerancia_arqueo), [conteo, parametros, resumen.teorico]);
 
   const [modalAbrir, setModalAbrir] = useState(false);
-  const [baseNueva, setBaseNueva] = useState(String(parametros.base_caja_diaria));
   const [responsable, setResponsable] = useState(perfil?.nombre ?? '');
   const [modalCerrar, setModalCerrar] = useState(false);
   const [observacionCierre, setObservacionCierre] = useState('');
@@ -63,11 +60,10 @@ export default function Jornada() {
     Boolean(arqueoDiaria) && aNumero(arqueoDiaria?.total_contado) === resultado.total_contado && aNumero(arqueoDiaria?.total_teorico) === resultado.total_teorico;
 
   async function confirmarApertura() {
-    const b = leerMonto(baseNueva);
-    if (b === null || b < 0) return;
+    const b = resumen.saldo_inicial;
     await abrir.mutateAsync({ fecha, base_caja_diaria: b, responsable_apertura: responsable.trim() || perfil?.nombre || null });
     setModalAbrir(false);
-    setMensaje(`Jornada del ${formatearFecha(fecha)} abierta con base de ${formatearSoles(b)}.`);
+    setMensaje(`Jornada del ${formatearFecha(fecha)} abierta con ${formatearSoles(b)} en caja.`);
   }
 
   async function guardar() {
@@ -151,8 +147,8 @@ export default function Jornada() {
               {formatearFecha(fecha, 'largo')}: sin jornada abierta
             </h2>
             <p className="max-w-2xl text-sm text-slate-600">
-              La caja diaria arranca cada día con la base para vuelto ({formatearSoles(parametros.base_caja_diaria)}) y recibe el efectivo de los cobros. Al cerrar se cuenta el efectivo, se compara con el
-              teórico y el excedente se retira.
+              La caja de recepción abre con el efectivo con que cerró el día anterior ({formatearSoles(resumen.saldo_inicial)}) y solo crece con el efectivo de los cobros. Al cerrar se cuenta el
+              efectivo y se compara con el teórico.
             </p>
             {delDia.length > 0 && (
               <Alerta tono="info">
@@ -162,7 +158,6 @@ export default function Jornada() {
             <Boton
               icono={<Unlock className="size-4" />}
               onClick={() => {
-                setBaseNueva(String(parametros.base_caja_diaria));
                 setResponsable(perfil?.nombre ?? '');
                 setModalAbrir(true);
               }}
@@ -218,9 +213,9 @@ export default function Jornada() {
           </Tarjeta>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Tarjeta titulo="Efectivo teórico" subtitulo="Lo que debería haber en la caja diaria al cierre">
+            <Tarjeta titulo="Efectivo teórico" subtitulo="Lo que debería haber en la caja de recepción al cierre">
               <dl className="divide-y divide-slate-100 text-sm">
-                <Fila etiqueta="Base para vuelto" valor={resumen.base} />
+                <Fila etiqueta={resumen.antes_del_corte ? 'Base para vuelto' : fecha === parametros.fecha_corte ? 'Base inicial (sale de la caja chica)' : 'Efectivo con que abrió (arrastre)'} valor={resumen.saldo_inicial} />
                 <Fila etiqueta={`Ingresos en efectivo (${resumen.n_ingresos} cobros)`} valor={resumen.ingresos_efectivo} signo="+" />
                 <Fila etiqueta="Trasladado a caja chica" valor={resumen.traslados_a_caja_chica} signo="−" />
                 <Fila etiqueta="Retiros de la caja diaria" valor={resumen.retiros} signo="−" />
@@ -338,9 +333,11 @@ export default function Jornada() {
         }
       >
         <div className="space-y-4">
-          <Campo etiqueta="Base para vuelto (S/)" requerido ayuda="Efectivo con el que arranca la caja diaria">
-            <Entrada inputMode="decimal" value={baseNueva} onChange={(e) => setBaseNueva(e.target.value)} />
-          </Campo>
+          <div className="rounded-lg bg-slate-50 p-3 text-sm">
+            <p className="text-slate-600">Efectivo con el que abre la caja</p>
+            <p className="text-lg font-semibold tabular-nums">{formatearSoles(resumen.saldo_inicial)}</p>
+            <p className="mt-1 text-xs text-slate-500">Es el arrastre del cierre anterior; no se reinicia a la base.</p>
+          </div>
           <Campo etiqueta="Responsable de apertura">
             <Entrada value={responsable} onChange={(e) => setResponsable(e.target.value)} />
           </Campo>
@@ -383,7 +380,7 @@ export default function Jornada() {
           <Campo etiqueta="Observación de cierre" requerido={resultado.estado === 'REVISAR'}>
             <AreaTexto rows={3} value={observacionCierre} onChange={(e) => setObservacionCierre(e.target.value)} />
           </Campo>
-          <p className="text-xs text-slate-500">Tras el cierre, el excedente sobre la base debe registrarse como retiro de la caja diaria. Un cajero ya no podrá editar los movimientos del día.</p>
+          <p className="text-xs text-slate-500">El efectivo contado pasa como saldo inicial del día siguiente. Un cajero ya no podrá editar los movimientos del día.</p>
         </div>
       </Modal>
     </>

@@ -2,7 +2,7 @@
 -- Idempotente: si ya existen movimientos importados no vuelve a insertarlos.
 
 insert into public.parametros (id, caja_chica_min, caja_chica_max, caja_chica_alerta, base_caja_diaria, saldo_inicial_caja_chica, fecha_corte, tolerancia_arqueo, hora_inicio_noche)
-values (1, 3000, 5000, 3500, 500, 5000, '2026-09-06', 0.01, '17:00')
+values (1, 3000, 5000, 3500, 500, 4767.9, '2026-09-11', 0.01, '17:00')
 on conflict (id) do update set caja_chica_min = excluded.caja_chica_min, caja_chica_max = excluded.caja_chica_max, caja_chica_alerta = excluded.caja_chica_alerta, base_caja_diaria = excluded.base_caja_diaria, saldo_inicial_caja_chica = excluded.saldo_inicial_caja_chica, fecha_corte = excluded.fecha_corte, tolerancia_arqueo = excluded.tolerancia_arqueo, hora_inicio_noche = excluded.hora_inicio_noche;
 
 insert into public.catalogos (tipo, valor, orden, activo) values
@@ -133,9 +133,8 @@ order by v.orden;
 
 -- Conteo del arqueo del Excel: todo el efectivo junto, aún sin separar la base de la caja diaria.
 insert into public.arqueos (jornada_id, caja, conteo, total_contado, total_teorico, diferencia, estado, observacion)
-select j.id, 'CHICA', '{"200": 0, "100": 20, "50": 25, "20": 5, "10": 101, "5": 1, "2": 80, "1": 110, "0.5": 229, "0.2": 26, "0.1": 132}'::jsonb, 4767.90, s.saldo, 4767.90 - s.saldo,
-       case when abs(4767.90 - s.saldo) <= (select tolerancia_arqueo from public.parametros where id = 1) then 'CUADRA' else 'REVISAR' end::public.estado_arqueo,
-       'Conteo importado del Excel: incluía todo el efectivo, sin separar la base de la caja diaria.'
-from public.jornadas j, (select coalesce(public.fn_saldo_caja_chica('2026-09-10'), 0) as saldo) s
+select j.id, 'CHICA', '{"200": 0, "100": 20, "50": 25, "20": 5, "10": 101, "5": 1, "2": 80, "1": 110, "0.5": 229, "0.2": 26, "0.1": 132}'::jsonb, 4767.90, 4767.90, 0, 'CUADRA',
+       'Conteo del Excel: todo el efectivo del área. Define el fondo con el que arranca la caja chica el 11/09/2026.'
+from public.jornadas j
 where j.fecha = '2026-09-10'
 on conflict (jornada_id, caja) do nothing;

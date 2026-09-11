@@ -41,9 +41,24 @@ export const ETIQUETA_ESTADO_CAJA_CHICA: Record<EstadoCajaChica, string> = {
   EXCEDE_MAXIMO: 'Excede máximo',
 };
 
+/**
+ * Efectivo acumulado en la caja diaria (recepción) al cierre de `hasta`.
+ * Arranca con la base en la fecha de corte, crece con el efectivo de los cobros
+ * y solo baja con retiros o traslados a la caja chica. `null` antes del corte.
+ */
+export function saldoCajaDiaria(movimientos: Movimiento[], parametros: Parametros, hasta: FechaISO): number | null {
+  if (hasta < parametros.fecha_corte) return null;
+  let saldo = redondear(parametros.base_caja_diaria);
+  for (const m of soloActivos(movimientos)) {
+    if (m.fecha >= parametros.fecha_corte && m.fecha <= hasta) saldo = sumar(saldo, efectoCajaDiaria(m));
+  }
+  return saldo;
+}
+
 export interface ResumenCajaDiaria {
   fecha: FechaISO;
-  base: number;
+  /** Efectivo con el que abre el día (arrastre del día anterior; la base en la fecha de corte). */
+  saldo_inicial: number;
   ingresos_efectivo: number;
   ingresos_digital: number;
   n_ingresos: number;
@@ -51,16 +66,23 @@ export interface ResumenCajaDiaria {
   retiros: number;
   /** Efectivo que debería haber en la caja diaria al cierre. */
   teorico: number;
+  /** `true` si la fecha es anterior al corte: se calcula solo con la base y el día. */
+  antes_del_corte: boolean;
 }
 
-export function resumenCajaDiaria(movimientos: Movimiento[], fecha: FechaISO, base: number): ResumenCajaDiaria {
+export function resumenCajaDiaria(movimientos: Movimiento[], parametros: Parametros, fecha: FechaISO): ResumenCajaDiaria {
   const lista = filtrarRango(movimientos, fecha, fecha);
+  const antes_del_corte = fecha < parametros.fecha_corte;
+  const saldo_inicial =
+    antes_del_corte || fecha === parametros.fecha_corte
+      ? redondear(parametros.base_caja_diaria)
+      : (saldoCajaDiaria(movimientos, parametros, sumarDias(fecha, -1)) ?? redondear(parametros.base_caja_diaria));
   let ingresos_efectivo = 0;
   let ingresos_digital = 0;
   let n_ingresos = 0;
   let traslados = 0;
   let retiros = 0;
-  let teorico = redondear(base);
+  let teorico = saldo_inicial;
   for (const m of lista) {
     if (m.tipo === 'INGRESO') {
       ingresos_efectivo = sumar(ingresos_efectivo, m.monto_efectivo);
@@ -73,7 +95,7 @@ export function resumenCajaDiaria(movimientos: Movimiento[], fecha: FechaISO, ba
     }
     teorico = sumar(teorico, efectoCajaDiaria(m));
   }
-  return { fecha, base: redondear(base), ingresos_efectivo, ingresos_digital, n_ingresos, traslados_a_caja_chica: traslados, retiros, teorico };
+  return { fecha, saldo_inicial, ingresos_efectivo, ingresos_digital, n_ingresos, traslados_a_caja_chica: traslados, retiros, teorico, antes_del_corte };
 }
 
 export interface ResumenCajaChicaDia {

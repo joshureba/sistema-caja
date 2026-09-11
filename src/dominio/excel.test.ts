@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/movimientos-excel.json';
 import type { Movimiento } from './tipos';
 import { PARAMETROS_POR_DEFECTO } from './tipos';
-import { resumenCajaChicaDia, resumenCajaDiaria, saldoCajaChica, estadoCajaChica } from './saldos';
+import { resumenCajaChicaDia, resumenCajaDiaria, saldoCajaChica, saldoCajaDiaria, estadoCajaChica } from './saldos';
 import { resumenPeriodo, resumenPorPeriodos, serieDiaria, ultimaFechaConMovimientos } from './resumen';
 import { restar, sumar } from './dinero';
 
 const movimientos = fixture as unknown as Movimiento[];
-const parametros = PARAMETROS_POR_DEFECTO;
+/** Parámetros con los que trabajaba el Excel (corte del 06/09 con S/ 5,000). */
+const parametros = { ...PARAMETROS_POR_DEFECTO, fecha_corte: '2026-09-06', saldo_inicial_caja_chica: 5000 };
 
 describe('importación del Excel', () => {
   it('trae los 83 movimientos del 01 al 10 de septiembre de 2026', () => {
@@ -119,15 +120,26 @@ describe('saldo de caja chica (desde el corte del 06/09 con S/ 5,000)', () => {
 });
 
 describe('caja diaria', () => {
-  it('efectivo teórico = base + efectivo del día − traslados − retiros', () => {
-    expect(resumenCajaDiaria(movimientos, '2026-09-10', 500).teorico).toBe(500);
-    expect(resumenCajaDiaria(movimientos, '2026-09-06', 500).teorico).toBe(910);
-    // El 04/09 (antes del corte) el retiro de 2,349.30 salió de la única caja que existía: la diaria.
-    const dia4 = resumenCajaDiaria(movimientos, '2026-09-04', 500);
+  it('acumula el efectivo desde el corte: arranca con la base y nunca baja por ventas', () => {
+    // 06/09 (día del corte): base 500 + 410 en efectivo.
+    const dia6 = resumenCajaDiaria(movimientos, parametros, '2026-09-06');
+    expect(dia6.saldo_inicial).toBe(500);
+    expect(dia6.teorico).toBe(910);
+    // 07/09 abre con lo que cerró el 06/09.
+    expect(resumenCajaDiaria(movimientos, parametros, '2026-09-07').saldo_inicial).toBe(910);
+    // Al 10/09: base + todo el efectivo cobrado desde el corte (el retiro del 08/09 salió de la caja chica).
+    const efectivoDesdeCorte = serieDiaria(movimientos, parametros, '2026-09-06', '2026-09-10').reduce((a, d) => sumar(a, d.ingresos_efectivo), 0);
+    expect(saldoCajaDiaria(movimientos, parametros, '2026-09-10')).toBe(sumar(500, efectivoDesdeCorte));
+    expect(resumenCajaDiaria(movimientos, parametros, '2026-09-08').retiros).toBe(0);
+    expect(saldoCajaDiaria(movimientos, parametros, '2026-09-05')).toBeNull();
+  });
+
+  it('antes del corte se calcula solo con la base y el día', () => {
+    // El 04/09 el retiro de 2,349.30 salió de la única caja que existía.
+    const dia4 = resumenCajaDiaria(movimientos, parametros, '2026-09-04');
+    expect(dia4.antes_del_corte).toBe(true);
     expect(dia4.retiros).toBe(2349.3);
     expect(dia4.teorico).toBe(restar(sumar(500, dia4.ingresos_efectivo), 2349.3));
-    // El 08/09 el retiro salió de la caja chica, así que no toca la caja diaria.
-    expect(resumenCajaDiaria(movimientos, '2026-09-08', 500).retiros).toBe(0);
   });
 });
 

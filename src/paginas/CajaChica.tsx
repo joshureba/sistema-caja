@@ -144,7 +144,7 @@ export default function CajaChica() {
               <dd className="tabular-nums text-red-700">−{formatearSoles(dia.egresos)}</dd>
             </div>
             <div className="flex justify-between py-2">
-              <dt className="text-slate-600">Retiros al banco</dt>
+              <dt className="text-slate-600">Retiros (banco o base de recepción)</dt>
               <dd className="tabular-nums text-red-700">−{formatearSoles(dia.retiros)}</dd>
             </div>
             <div className="flex justify-between py-2 font-semibold">
