@@ -15,12 +15,14 @@ export type ParametrosActualizar = TablesUpdate<'parametros'>;
 export type CatalogoBD = Tables<'catalogos'>;
 export type CatalogoInsertar = TablesInsert<'catalogos'>;
 export type AuditoriaBD = Tables<'auditoria'>;
+export type ObservacionArqueoBD = Tables<'observaciones_arqueo'>;
 
 export type RolUsuario = Database['public']['Enums']['rol_usuario'];
 
-export const TIPOS_CATALOGO = ['AREA', 'MEDIO_PAGO', 'CUENTA', 'COMPROBANTE'] as const;
+export const TIPOS_CATALOGO = ['RESPONSABLE', 'AREA', 'MEDIO_PAGO', 'CUENTA', 'COMPROBANTE'] as const;
 export type TipoCatalogo = (typeof TIPOS_CATALOGO)[number];
 export const ETIQUETA_CATALOGO: Record<TipoCatalogo, string> = {
+  RESPONSABLE: 'Responsables de movimientos',
   AREA: 'Áreas',
   MEDIO_PAGO: 'Medios de pago',
   CUENTA: 'Cuentas',

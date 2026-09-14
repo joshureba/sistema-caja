@@ -32,6 +32,7 @@ export function aMovimiento(fila: MovimientoBD): Movimiento {
     caja_retiro: fila.caja_retiro,
     destino: fila.destino,
     observacion: fila.observacion,
+    responsable: fila.responsable,
     anulado: fila.anulado,
     importado: fila.importado,
     creado_por: fila.creado_por,

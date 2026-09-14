@@ -55,6 +55,17 @@ export function saldoCajaDiaria(movimientos: Movimiento[], parametros: Parametro
   return saldo;
 }
 
+/** Composición del fondo: los envíos reducen el disponible, nunca los ingresos cobrados. */
+export function resumenFondoAcumulado(movimientos: Movimiento[], parametros: Parametros, hasta: FechaISO) {
+  let ingresos = 0;
+  let envios = 0;
+  for (const m of filtrarRango(movimientos, parametros.fecha_corte, hasta)) {
+    if (m.tipo === 'INGRESO') ingresos = sumar(ingresos, m.monto_efectivo);
+    if (m.tipo === 'RETIRO' && m.caja_retiro === 'DIARIA') envios = sumar(envios, m.monto);
+  }
+  return { saldo: saldoCajaDiaria(movimientos, parametros, hasta), ingresos, envios, total_recibido: sumar(parametros.base_caja_diaria, ingresos) };
+}
+
 export interface ResumenCajaDiaria {
   fecha: FechaISO;
   /** Efectivo con el que abre el día (arrastre del día anterior; la base en la fecha de corte). */

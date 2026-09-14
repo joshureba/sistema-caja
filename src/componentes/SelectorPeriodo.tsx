@@ -1,7 +1,6 @@
-import { clsx } from 'clsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ETIQUETA_PERIODO, PERIODOS, formatearFecha, hoyISO, rangoAnterior, rangoPeriodo, rangoSiguiente, type TipoPeriodo } from '@/dominio';
-import { Entrada } from './ui';
+import { Boton, BotonIcono, Entrada, Segmentado } from './ui';
 
 interface Props {
   tipo: TipoPeriodo;
@@ -9,42 +8,29 @@ interface Props {
   onCambio: (tipo: TipoPeriodo, fechaRef: string) => void;
 }
 
-/** Una sola fila de filtros que gobierna todo lo que está debajo. */
+const OPCIONES = PERIODOS.map((p) => ({ valor: p, etiqueta: ETIQUETA_PERIODO[p] }));
+
+/** Una sola tira de filtros que gobierna todo lo que está debajo. */
 export function SelectorPeriodo({ tipo, fechaRef, onCambio }: Props) {
   const rango = rangoPeriodo(tipo, fechaRef);
   return (
-    <div className="no-imprimir flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex flex-wrap gap-1" role="group" aria-label="Tipo de período">
-        {PERIODOS.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onCambio(p, fechaRef)}
-            aria-pressed={p === tipo}
-            className={clsx(
-              'rounded-lg px-3 py-1.5 text-sm font-medium transition',
-              p === tipo ? 'bg-marca-800 text-white' : 'text-slate-600 hover:bg-slate-100',
-            )}
-          >
-            {ETIQUETA_PERIODO[p]}
-          </button>
-        ))}
-      </div>
-      <div className="ml-auto flex items-center gap-2">
-        <button type="button" onClick={() => onCambio(tipo, rangoAnterior(tipo, rango).desde)} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Período anterior">
-          <ChevronLeft className="size-5" />
-        </button>
-        <Entrada type="date" value={fechaRef} onChange={(e) => e.target.value && onCambio(tipo, e.target.value)} className="w-40! shrink-0" aria-label="Fecha de referencia" />
-        <button type="button" onClick={() => onCambio(tipo, rangoSiguiente(tipo, rango).desde)} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Período siguiente">
-          <ChevronRight className="size-5" />
-        </button>
-        <button type="button" onClick={() => onCambio(tipo, hoyISO())} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
-          Hoy
-        </button>
-      </div>
-      <p className="w-full text-sm text-slate-500 sm:w-auto">
-        {rango.desde === rango.hasta ? formatearFecha(rango.desde, 'largo') : `${formatearFecha(rango.desde)} al ${formatearFecha(rango.hasta)}`}
+    <div className="no-imprimir flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[3px] bg-papel px-3 py-2.5 shadow-hoja">
+      <Segmentado etiqueta="Tipo de período" opciones={OPCIONES} valor={tipo} onCambio={(p) => onCambio(p, fechaRef)} />
+      <p className="cifra text-[13px] text-tinta-2" aria-live="polite">
+        {rango.desde === rango.hasta ? formatearFecha(rango.desde) : `${formatearFecha(rango.desde)} → ${formatearFecha(rango.hasta)}`}
       </p>
+      <div className="ml-auto flex items-center gap-1">
+        <BotonIcono etiqueta="Período anterior" onClick={() => onCambio(tipo, rangoAnterior(tipo, rango).desde)}>
+          <ChevronLeft className="size-5" aria-hidden />
+        </BotonIcono>
+        <Entrada type="date" value={fechaRef} onChange={(e) => e.target.value && onCambio(tipo, e.target.value)} className="cifra w-40! shrink-0 text-[13px]" aria-label="Fecha de referencia" />
+        <BotonIcono etiqueta="Período siguiente" onClick={() => onCambio(tipo, rangoSiguiente(tipo, rango).desde)}>
+          <ChevronRight className="size-5" aria-hidden />
+        </BotonIcono>
+        <Boton variante="secundario" tamano="md" onClick={() => onCambio(tipo, hoyISO())} className="ml-1">
+          Hoy
+        </Boton>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { Encabezado } from '@/componentes/Layout';
-import { Alerta, Boton, Cargando, Entrada, Insignia, Selector, Tabla, Tarjeta, claseTd, claseTh } from '@/componentes/ui';
+import { Alerta, Boton, Cargando, Casilla, Entrada, Insignia, Selector, Tabla, Tarjeta, claseTd, claseTh } from '@/componentes/ui';
 import { useActualizarPerfil, usePerfiles } from '@/datos/consultas';
 import { mensajeError } from '@/lib/supabase';
 import type { PerfilBD, RolUsuario } from '@/lib/tipos-bd';
@@ -23,7 +23,7 @@ export default function Usuarios() {
             <Alerta tono="peligro">{mensajeError(perfiles.error)}</Alerta>
           ) : (
             <Tabla>
-              <thead className="bg-slate-50">
+              <thead>
                 <tr>
                   <th className={claseTh}>Nombre</th>
                   <th className={claseTh}>DNI</th>
@@ -34,7 +34,7 @@ export default function Usuarios() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-papel-3">
                 {perfiles.data?.map((p) => (
                   <FilaPerfil key={p.id} perfil={p} />
                 ))}
@@ -66,10 +66,10 @@ function FilaPerfil({ perfil }: { perfil: PerfilBD }) {
     <tr>
       <td className={claseTd}>
         <Entrada value={nombre} onChange={(e) => setNombre(e.target.value)} className="min-w-48" aria-label={`Nombre de ${perfil.nombre}`} />
-        {esYo && <span className="mt-1 block text-xs text-slate-400">Tu usuario</span>}
+        {esYo && <span className="mt-1 block text-[12px] text-tinta-3">Tu usuario</span>}
       </td>
       <td className={claseTd}>
-        <Entrada value={dni} onChange={(e) => setDni(e.target.value)} className="w-32" inputMode="numeric" aria-label={`DNI de ${perfil.nombre}`} />
+        <Entrada value={dni} onChange={(e) => setDni(e.target.value)} className="cifra w-32 text-[13px]" inputMode="numeric" aria-label={`DNI de ${perfil.nombre}`} />
       </td>
       <td className={claseTd}>
         <Selector value={rol} onChange={(e) => setRol(e.target.value as RolUsuario)} disabled={esYo} className="w-36" aria-label={`Rol de ${perfil.nombre}`}>
@@ -78,16 +78,13 @@ function FilaPerfil({ perfil }: { perfil: PerfilBD }) {
         </Selector>
       </td>
       <td className={claseTd}>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" className="size-4 rounded border-slate-300" checked={activo} disabled={esYo} onChange={(e) => setActivo(e.target.checked)} />
-          {activo ? <Insignia tono="exito">Activo</Insignia> : <Insignia tono="neutro">Inactivo</Insignia>}
-        </label>
+        <Casilla etiqueta={activo ? <Insignia tono="exito">Activo</Insignia> : <Insignia tono="neutro">Inactivo</Insignia>} checked={activo} disabled={esYo} onChange={(e) => setActivo(e.target.checked)} className="mt-2" />
       </td>
       <td className={`${claseTd} whitespace-nowrap`}>
         <Boton tamano="sm" onClick={() => void guardar()} disabled={!cambiado} cargando={actualizar.isPending}>
           Guardar
         </Boton>
-        {actualizar.error ? <p className="mt-1 text-xs text-red-600">{mensajeError(actualizar.error)}</p> : null}
+        {actualizar.error ? <p className="mt-1 text-[12.5px] text-rojo">{mensajeError(actualizar.error)}</p> : null}
       </td>
     </tr>
   );

@@ -1,52 +1,48 @@
-import { clsx } from 'clsx';
 import { useState, type ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { formatearSoles } from '@/dominio';
-import { Tabla, Tarjeta, claseTdNum, claseTd, claseTh, claseThNum } from './ui';
+import { formatearSoles, restar } from '@/dominio';
+import { Segmentado, Tabla, Tarjeta, claseTdNum, claseTd, claseTh, claseThNum } from './ui';
 
+/** Paleta fija de gráficos del mundo «Cinta de caja»: azul de sello, rojo de cinta y tinta negra. */
 export const COLORES = {
-  serie1: '#2a78d6',
-  serie2: '#eb6834',
-  serie3: '#1baf7a',
-  bueno: '#0ca30c',
-  alerta: '#fab219',
-  critico: '#d03b3b',
-  grid: '#e1e0d9',
-  axis: '#c3c2b7',
-  muted: '#898781',
-  surface: '#fcfcfb',
+  serie1: '#1f4fa3',
+  serie2: '#bf2a2a',
+  serie3: '#1c1c22',
+  bueno: '#1f4fa3',
+  alerta: '#bf2a2a',
+  critico: '#9e2020',
+  grid: '#e2e2da',
+  axis: '#a9a9a0',
+  muted: '#66666f',
+  surface: '#f7f7f3',
 };
+
+const FUENTE_CIFRAS = '"Martian Mono Variable", ui-monospace, monospace';
 
 const formatoEje = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 });
 export const tickSoles = (v: number) => formatoEje.format(v);
 
-const estiloTooltip = { borderRadius: 8, border: '1px solid #e1e0d9', boxShadow: '0 4px 12px rgba(11,11,11,0.08)', fontSize: 12 };
+const estiloTooltip = { borderRadius: 2, border: '1px solid #cdcdc4', background: COLORES.surface, boxShadow: '0 8px 20px -8px rgba(4,12,34,0.35)', fontSize: 12, fontFamily: FUENTE_CIFRAS };
+const estiloTick = { fontSize: 10.5, fill: COLORES.muted, fontFamily: FUENTE_CIFRAS };
 const formatoValor = (valor: unknown) => formatearSoles(Number(valor));
 
-/** Tarjeta con conmutador gráfico / tabla: toda visualización tiene su tabla gemela. */
-export function TarjetaGrafico({ titulo, subtitulo, grafico, tabla, acciones }: { titulo: ReactNode; subtitulo?: ReactNode; grafico: ReactNode; tabla: ReactNode; acciones?: ReactNode }) {
+const VISTAS = [
+  { valor: 'grafico', etiqueta: 'Gráfico' },
+  { valor: 'tabla', etiqueta: 'Tabla' },
+] as const;
+
+/** Hoja con conmutador gráfico / tabla: toda visualización tiene su tabla gemela. */
+export function TarjetaGrafico({ titulo, subtitulo, grafico, tabla, acciones, className }: { titulo: ReactNode; subtitulo?: ReactNode; grafico: ReactNode; tabla: ReactNode; acciones?: ReactNode; className?: string }) {
   const [vista, setVista] = useState<'grafico' | 'tabla'>('grafico');
-  const boton = (v: typeof vista, etiqueta: string) => (
-    <button
-      type="button"
-      onClick={() => setVista(v)}
-      aria-pressed={vista === v}
-      className={clsx('rounded-md px-2.5 py-1 text-xs font-medium', vista === v ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100')}
-    >
-      {etiqueta}
-    </button>
-  );
   return (
     <Tarjeta
+      className={className}
       titulo={titulo}
       subtitulo={subtitulo}
       acciones={
         <>
           {acciones}
-          <div className="no-imprimir flex rounded-lg border border-slate-200 p-0.5" role="group" aria-label="Vista">
-            {boton('grafico', 'Gráfico')}
-            {boton('tabla', 'Tabla')}
-          </div>
+          <Segmentado className="no-imprimir" etiqueta="Vista" tamano="sm" opciones={VISTAS} valor={vista} onCambio={setVista} />
         </>
       }
       sinRelleno={vista === 'tabla'}
@@ -67,13 +63,13 @@ export function GraficoIngresosEgresos({ datos, alto = 260 }: { datos: PuntoIngr
     <div style={{ height: alto }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={datos} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={2} barCategoryGap="30%">
-          <CartesianGrid vertical={false} stroke={COLORES.grid} />
-          <XAxis dataKey="etiqueta" tickLine={false} axisLine={{ stroke: COLORES.axis }} tick={{ fontSize: 11, fill: COLORES.muted }} minTickGap={12} />
-          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: COLORES.muted }} tickFormatter={tickSoles} width={56} />
-          <Tooltip cursor={{ fill: 'rgba(11,11,11,0.04)' }} formatter={formatoValor} contentStyle={estiloTooltip} />
-          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="ingresos" name="Ingresos" fill={COLORES.serie1} radius={[4, 4, 0, 0]} maxBarSize={24} />
-          <Bar dataKey="egresos" name="Egresos caja chica" fill={COLORES.serie2} radius={[4, 4, 0, 0]} maxBarSize={24} />
+          <CartesianGrid vertical={false} stroke={COLORES.grid} strokeDasharray="2 3" />
+          <XAxis dataKey="etiqueta" tickLine={false} axisLine={{ stroke: COLORES.axis }} tick={estiloTick} minTickGap={12} />
+          <YAxis tickLine={false} axisLine={false} tick={estiloTick} tickFormatter={tickSoles} width={60} />
+          <Tooltip cursor={{ fill: 'rgba(28,28,34,0.05)' }} formatter={formatoValor} contentStyle={estiloTooltip} />
+          <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 12.5 }} />
+          <Bar dataKey="ingresos" name="Ingresos" fill={COLORES.serie1} radius={[1, 1, 0, 0]} maxBarSize={22} />
+          <Bar dataKey="egresos" name="Egresos caja chica" fill={COLORES.serie2} radius={[1, 1, 0, 0]} maxBarSize={22} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -83,7 +79,7 @@ export function GraficoIngresosEgresos({ datos, alto = 260 }: { datos: PuntoIngr
 export function TablaIngresosEgresos({ datos }: { datos: PuntoIngresoEgreso[] }) {
   return (
     <Tabla>
-      <thead className="bg-slate-50">
+      <thead>
         <tr>
           <th className={claseTh}>Período</th>
           <th className={claseThNum}>Ingresos</th>
@@ -91,13 +87,13 @@ export function TablaIngresosEgresos({ datos }: { datos: PuntoIngresoEgreso[] })
           <th className={claseThNum}>Neto</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-papel-3">
         {datos.map((d) => (
           <tr key={d.etiqueta}>
             <td className={claseTd}>{d.etiqueta}</td>
             <td className={claseTdNum}>{formatearSoles(d.ingresos)}</td>
             <td className={claseTdNum}>{formatearSoles(d.egresos)}</td>
-            <td className={claseTdNum}>{formatearSoles(d.ingresos - d.egresos)}</td>
+            <td className={claseTdNum}>{formatearSoles(restar(d.ingresos, d.egresos))}</td>
           </tr>
         ))}
       </tbody>
@@ -115,26 +111,29 @@ export function GraficoSaldoCajaChica({ datos, minimo, maximo, alerta, alto = 26
   const piso = Math.min(minimo, ...valores) * 0.9;
   const techo = Math.max(maximo, ...valores) * 1.05;
   const dominio: [number, number] = [Math.max(0, Math.floor(piso / 500) * 500), Math.ceil(techo / 500) * 500];
-  const etiquetaRef = (texto: string) => ({ value: texto, position: 'insideTopRight' as const, fontSize: 11, fill: COLORES.muted });
+  // Marcas del eje a intervalos parejos (500 o 1,000), no las que reparte Recharts.
+  const paso = dominio[1] - dominio[0] > 4000 ? 1000 : 500;
+  const marcas = Array.from({ length: Math.floor((dominio[1] - dominio[0]) / paso) + 1 }, (_, i) => dominio[0] + i * paso);
+  const etiquetaRef = (texto: string, color: string) => ({ value: texto, position: 'insideTopRight' as const, fontSize: 10.5, fill: color, fontFamily: FUENTE_CIFRAS });
   return (
     <div style={{ height: alto }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={datos} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke={COLORES.grid} />
-          <XAxis dataKey="etiqueta" tickLine={false} axisLine={{ stroke: COLORES.axis }} tick={{ fontSize: 11, fill: COLORES.muted }} minTickGap={12} />
-          <YAxis domain={dominio} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: COLORES.muted }} tickFormatter={tickSoles} width={56} />
+          <CartesianGrid vertical={false} stroke={COLORES.grid} strokeDasharray="2 3" />
+          <XAxis dataKey="etiqueta" tickLine={false} axisLine={{ stroke: COLORES.axis }} tick={estiloTick} minTickGap={12} />
+          <YAxis domain={dominio} ticks={marcas} tickLine={false} axisLine={false} tick={estiloTick} tickFormatter={tickSoles} width={60} />
           <Tooltip formatter={formatoValor} contentStyle={estiloTooltip} />
-          <ReferenceLine y={maximo} stroke={COLORES.critico} strokeWidth={1} label={etiquetaRef(`Máximo ${tickSoles(maximo)}`)} />
-          {alerta !== null && <ReferenceLine y={alerta} stroke={COLORES.alerta} strokeWidth={1} label={etiquetaRef(`Alerta ${tickSoles(alerta)}`)} />}
-          <ReferenceLine y={minimo} stroke={COLORES.critico} strokeWidth={1} label={etiquetaRef(`Mínimo ${tickSoles(minimo)}`)} />
+          <ReferenceLine y={maximo} stroke={COLORES.muted} strokeWidth={1} label={etiquetaRef(`Máx. ${tickSoles(maximo)}`, COLORES.muted)} />
+          {alerta !== null && <ReferenceLine y={alerta} stroke={COLORES.alerta} strokeWidth={1} strokeDasharray="4 3" label={etiquetaRef(`Alerta ${tickSoles(alerta)}`, COLORES.alerta)} />}
+          <ReferenceLine y={minimo} stroke={COLORES.critico} strokeWidth={1} label={etiquetaRef(`Mín. ${tickSoles(minimo)}`, COLORES.critico)} />
           <Line
-            type="monotone"
+            type="stepAfter"
             dataKey="saldo"
             name="Saldo caja chica"
             stroke={COLORES.serie1}
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 5, strokeWidth: 2, stroke: COLORES.surface }}
+            activeDot={{ r: 4, strokeWidth: 2, stroke: COLORES.surface }}
             connectNulls={false}
             isAnimationActive={false}
           />
@@ -147,13 +146,13 @@ export function GraficoSaldoCajaChica({ datos, minimo, maximo, alerta, alto = 26
 export function TablaSaldo({ datos }: { datos: PuntoSaldo[] }) {
   return (
     <Tabla>
-      <thead className="bg-slate-50">
+      <thead>
         <tr>
           <th className={claseTh}>Fecha</th>
           <th className={claseThNum}>Saldo caja chica</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-papel-3">
         {datos.map((d) => (
           <tr key={d.etiqueta}>
             <td className={claseTd}>{d.etiqueta}</td>

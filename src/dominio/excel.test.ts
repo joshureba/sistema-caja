@@ -3,7 +3,7 @@
  * (celdas en caché del libro CAJA ACTUALIZADA 10-09) usando los 83 movimientos importados.
  */
 import { describe, expect, it } from 'vitest';
-import fixture from './fixtures/movimientos-excel.json';
+import fixture from './fixtures/movimientos-excel-10-09.json';
 import type { Movimiento } from './tipos';
 import { PARAMETROS_POR_DEFECTO } from './tipos';
 import { resumenCajaChicaDia, resumenCajaDiaria, saldoCajaChica, saldoCajaDiaria, estadoCajaChica } from './saldos';

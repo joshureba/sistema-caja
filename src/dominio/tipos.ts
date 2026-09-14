@@ -13,7 +13,7 @@ export const ETIQUETA_TIPO: Record<TipoMovimiento, string> = {
 };
 
 export type TipoCaja = 'DIARIA' | 'CHICA';
-export const ETIQUETA_CAJA: Record<TipoCaja, string> = { DIARIA: 'Caja diaria', CHICA: 'Caja chica' };
+export const ETIQUETA_CAJA: Record<TipoCaja, string> = { DIARIA: 'Caja de fondo (diaria)', CHICA: 'Caja chica' };
 
 export const TURNOS = ['MAÑANA', 'NOCHE'] as const;
 export type Turno = (typeof TURNOS)[number];
@@ -25,9 +25,9 @@ export const ORIGENES_REPOSICION = ['BANCO', 'CAJA_DIARIA'] as const;
 export type OrigenReposicion = (typeof ORIGENES_REPOSICION)[number];
 export const ETIQUETA_ORIGEN: Record<OrigenReposicion, string> = { BANCO: 'Banco', CAJA_DIARIA: 'Caja diaria' };
 
-export const DESTINOS_RETIRO = ['BANCO', 'OTRO'] as const;
+export const DESTINOS_RETIRO = ['BANCO', 'OTRO', 'GERENCIA'] as const;
 export type DestinoRetiro = (typeof DESTINOS_RETIRO)[number];
-export const ETIQUETA_DESTINO: Record<DestinoRetiro, string> = { BANCO: 'Banco', OTRO: 'Otro' };
+export const ETIQUETA_DESTINO: Record<DestinoRetiro, string> = { BANCO: 'Banco', OTRO: 'Otro', GERENCIA: 'Gerencia' };
 
 export const PERIODOS = ['DIARIO', 'SEMANAL', 'QUINCENAL', 'MENSUAL', 'SEMESTRAL', 'ANUAL'] as const;
 export type TipoPeriodo = (typeof PERIODOS)[number];
@@ -67,6 +67,8 @@ export interface Movimiento {
   /** Solo RETIRO: a dónde va el efectivo. */
   destino: DestinoRetiro | null;
   observacion: string | null;
+  /** Quién hizo el movimiento en ventanilla; los importados del Excel no lo tienen. */
+  responsable?: string | null;
   anulado: boolean;
   importado: boolean;
   creado_por: string | null;
@@ -95,8 +97,8 @@ export const PARAMETROS_POR_DEFECTO: Parametros = {
   caja_chica_max: 5000,
   caja_chica_alerta: 3500,
   base_caja_diaria: 500,
-  saldo_inicial_caja_chica: 4767.9,
-  fecha_corte: '2026-09-11',
+  saldo_inicial_caja_chica: 6032.9,
+  fecha_corte: '2026-09-14',
   tolerancia_arqueo: 0.01,
   hora_inicio_noche: '17:00',
   denominaciones: DENOMINACIONES_PEN,

@@ -2,6 +2,16 @@ import type { Movimiento } from './tipos';
 import { redondear, sumar } from './dinero';
 import type { FechaISO } from './fechas';
 
+export const FECHA_FONDO_SOLO_INGRESOS = '2026-09-14';
+export const FECHA_CAJA_CHICA_SOLO_EGRESOS = '2026-09-15';
+
+export function esSalidaDelFondo(m: Pick<Movimiento, 'fecha' | 'tipo' | 'origen' | 'caja_retiro' | 'destino'>): boolean {
+  return m.fecha >= FECHA_FONDO_SOLO_INGRESOS && (
+    (m.tipo === 'RETIRO' && m.caja_retiro === 'DIARIA' && m.destino !== 'GERENCIA') ||
+    (m.tipo === 'REPOSICION_CAJA_CHICA' && m.origen === 'CAJA_DIARIA')
+  );
+}
+
 /** Importe del movimiento: para INGRESO es digital + efectivo; para el resto es `monto`. */
 export function montoTotal(m: Movimiento): number {
   return m.tipo === 'INGRESO' ? sumar(m.monto_digital, m.monto_efectivo) : redondear(m.monto);
@@ -46,6 +56,11 @@ export function enRango(m: Movimiento, desde: FechaISO, hasta: FechaISO): boolea
 /** Movimientos no anulados dentro del rango de fechas (inclusive). */
 export function filtrarRango(movimientos: Movimiento[], desde: FechaISO, hasta: FechaISO): Movimiento[] {
   return movimientos.filter((m) => !m.anulado && enRango(m, desde, hasta));
+}
+
+/** Operaciones de las cajas separadas; el histórico previo al corte no integra el dashboard. */
+export function movimientosDesdeCorte(movimientos: Movimiento[], fechaCorte: FechaISO, hasta: FechaISO): Movimiento[] {
+  return filtrarRango(movimientos, fechaCorte, hasta);
 }
 
 /** Orden cronológico: fecha, turno (mañana antes que noche) y luego id. */

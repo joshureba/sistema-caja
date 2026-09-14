@@ -1,0 +1,132 @@
+{
+  "title": "Elige el mundo visual del Sistema de Caja",
+  "question": "El sorteo asignó «Cinta de caja». Quédate con ella, toma la alternativa o vuelve a sortear.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Cinta de caja",
+      "kicker": "THE ROLL",
+      "lineage": "Cinta de auditoría y Reporte X/Z de la registradora con impresora bicolor",
+      "thesis": "Cada jornada es una cinta impresa que termina en su Reporte Z, no un tablero de tarjetas.",
+      "palette": ["#17336E", "#F6F6F2", "#1C1C22", "#C62B2B"],
+      "materials": ["papel térmico con borde dentado", "tinta de cinta negra y roja"],
+      "viewport": "Sobre el azul del logo, dos cintas verticales (caja de fondo y caja chica) con el saldo en cifras dobles y, debajo, el Reporte X del día.",
+      "risk": "Si todo va en monoespaciada, las descripciones largas y la configuración cansan: se limita a cifras, encabezados y totales.",
+      "raised": [
+        { "from": "challenger-cuarto-oscuro", "raise": "El cierre muestra primero un Reporte X de prueba; solo al confirmar se emite el Z irreversible." },
+        { "from": "challenger-ascii", "raise": "Todas las cifras se alinean a una rejilla de caracteres, así las columnas cuadran entre cintas." },
+        { "from": "challenger-campo-verde", "raise": "Un solo color de campo, el azul del logo, es el mostrador; las cintas flotan sobre él como objetos." },
+        { "from": "challenger-catalogo-fac", "raise": "Cada movimiento y jornada lleva su correlativo visible (N.º 000125), como en una registradora." },
+        { "from": "challenger-capa", "raise": "La jornada usa estados con nombre propio: ABIERTA, REPORTE X, CERRADA (Z) y REABIERTA." },
+        { "from": "challenger-inmersion", "raise": "El rango de caja chica vive en una sola escala vertical con su banda de alerta, igual en toda la app." }
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "Libro de caja",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Libro contable rayado de columnas Debe / Haber / Saldo",
+      "thesis": "La app como libro contable: cada movimiento es un renglón con su saldo corrido.",
+      "palette": ["#F2F6F1", "#2F6B4F", "#1D2430", "#B3261E"],
+      "materials": ["papel contable rayado verde", "tinta azul-negra y roja"],
+      "viewport": "Movimientos como página del libro: fecha, concepto, ingreso, egreso y saldo corrido en columnas fijas con rayado fino.",
+      "risk": "Es la dirección más familiar para una caja: puede sentirse como el Excel que viene a reemplazar."
+    },
+    {
+      "id": "challenger-cuarto-oscuro",
+      "label": "Cuarto oscuro",
+      "verdict": "declined",
+      "lineage": "Laboratorio fotográfico bajo luz de seguridad ámbar",
+      "thesis": "La jornada avanza por estaciones fijas, irreversibles pasado cierto punto.",
+      "palette": ["#E08A1E", "#2B2B2B", "#BDBDBD", "#F4F1EA"],
+      "materials": ["luz ámbar", "bandejas de esmalte"],
+      "viewport": "Estaciones abrir, registrar, arquear y cerrar en fila bajo luz ámbar.",
+      "case": "Se fusiona a medias: el flujo por estaciones calza, pero el ámbar borra el rojo/verde del dinero y el cajero no se reconoce ahí.",
+      "risk": "Monocromo ámbar ilegible para estados de dinero.",
+      "kept": "Vista previa antes de un paso irreversible (Reporte X antes del Z).",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-darkroom-safelight-bay-hero.webp"
+    },
+    {
+      "id": "challenger-ascii",
+      "label": "Escena ASCII",
+      "verdict": "declined",
+      "lineage": "Render en caracteres de máquina de escribir",
+      "thesis": "Una rejilla monoespaciada estricta como composición completa.",
+      "palette": ["#0A0A0A", "#39FF6A", "#F2B233"],
+      "materials": ["fósforo verde", "rejilla de caracteres"],
+      "viewport": "Saldos dibujados con densidad de glifos sobre negro.",
+      "case": "Se fusiona mal: novedad retro que nadie en recepción asocia con dinero y que dificulta leer montos.",
+      "risk": "Parece un juego, no una caja.",
+      "kept": "Disciplina de rejilla de caracteres para alinear cifras.",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-ascii-live-scene-render-hero.webp"
+    },
+    {
+      "id": "challenger-campo-verde",
+      "label": "Campo verde con cápsulas",
+      "verdict": "declined",
+      "lineage": "Sitio de marca con pastillas flotantes sobre un color saturado",
+      "thesis": "Un color domina el viewport y la interfaz flota encima en cápsulas blancas.",
+      "palette": ["#82CC5C", "#2F3130", "#FFFFFF", "#F0574C"],
+      "materials": ["cápsulas blancas", "paneles de 48px de radio"],
+      "viewport": "Barra en cápsula flotante y saldos en pastillas sobre verde.",
+      "case": "Se fusiona mal: lenguaje de marketing, pierde densidad para tablas y formularios.",
+      "risk": "Juguetón para una herramienta de control de dinero.",
+      "kept": "Compromiso total con un solo color de campo.",
+      "hero": "https://impeccable.style/worlds/cards/sd-seedbed-lobes-hero.webp"
+    },
+    {
+      "id": "challenger-catalogo-fac",
+      "label": "Catálogo numerado",
+      "verdict": "declined",
+      "lineage": "Identidad de sello discográfico con números de catálogo y códigos de color",
+      "thesis": "Todo es una entrada numerada; el color reemplaza a las palabras.",
+      "palette": ["#111111", "#FFFFFF", "#E4312B", "#2E7BC4"],
+      "materials": ["cartón negro mate", "líneas blancas finas"],
+      "viewport": "Índice de movimientos por número con franjas de color por tipo.",
+      "case": "Se fusiona a medias: el correlativo encaja, pero ocultar etiquetas tras códigos de color falla en claridad para el cajero.",
+      "risk": "Oscuro y críptico en jornadas largas.",
+      "kept": "El correlativo como identidad visible de cada registro.",
+      "hero": "https://impeccable.style/worlds/cards/brand-identity-canon-saville-catalog-sleeve-hero.webp"
+    },
+    {
+      "id": "challenger-capa",
+      "label": "Capa con cordones",
+      "verdict": "declined",
+      "lineage": "Prenda que se transforma al tirar un cordón",
+      "thesis": "Un plano que cambia de forma por estados con nombre.",
+      "palette": ["#101010", "#C9A227", "#5B5B5B", "#7A8594"],
+      "materials": ["seda negra", "cordón dorado"],
+      "viewport": "Silueta negra que se pliega según el estado.",
+      "case": "Se fusiona mal: sin relación con el mundo del cajero ni con los datos.",
+      "risk": "Decorativo sin función.",
+      "kept": "Vocabulario explícito de estados con nombre.",
+      "hero": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-drawcord-transforming-cape-hero.webp"
+    },
+    {
+      "id": "challenger-inmersion",
+      "label": "Inmersión profunda",
+      "verdict": "declined",
+      "lineage": "Perfil de buceo técnico con computadora de profundidad",
+      "thesis": "Un eje vertical de profundidad gobierna todo y una banda marca el límite activo.",
+      "palette": ["#0B1E3A", "#2FD3E0", "#F4F7FA", "#5A6B80"],
+      "materials": ["azul abisal", "dígitos de computadora de buceo"],
+      "viewport": "El saldo de caja chica como profundidad entre mínimo y máximo.",
+      "case": "Se fusiona a medias: la escala vertical calza con el rango de caja chica, pero la metáfora submarina no es del cajero.",
+      "risk": "Metáfora ajena al área.",
+      "kept": "Una sola escala vertical con banda de alerta para el rango.",
+      "hero": "https://impeccable.style/worlds/cards/rivers-tides-ocean-depths-mesophotic-deep-dive-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code", "toggle": false },
+  "canon": true,
+  "canonCard": {
+    "label": "Panel administrativo estándar",
+    "thesis": "Lo que suele usar un sistema de caja web, ejecutado con cuidado.",
+    "palette": ["#FFFFFF", "#0F172A", "#2563EB", "#E2E8F0"],
+    "materials": ["tarjetas blancas", "barra lateral"],
+    "viewport": "Barra lateral, fila de indicadores y tablas en tarjetas.",
+    "risk": "Igual a cualquier panel SaaS y muy cercano a la versión actual."
+  },
+  "steer": true
+}

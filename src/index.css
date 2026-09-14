@@ -1,43 +1,188 @@
 @import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/martian-mono/wdth.css";
 
+/*
+ * Mundo visual «Cinta de caja»: el azul del logo es el mostrador, las cajas se leen en
+ * cintas de papel térmico con tinta negra, tinta roja para salidas y descuadres, y azul
+ * de sello para acciones y estados.
+ */
 @theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --color-marca-50: #eef3fb;
-  --color-marca-100: #d9e4f5;
-  --color-marca-200: #b3c9ea;
-  --color-marca-300: #7fa3d9;
-  --color-marca-400: #4a7cc4;
-  --color-marca-500: #2a5ba8;
-  --color-marca-600: #1d478c;
-  --color-marca-700: #143667;
-  --color-marca-800: #0b2c5d;
-  --color-marca-900: #081f42;
+  --font-sans: "Archivo Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Martian Mono Variable", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Mostrador */
+  --color-campo: #16316b;
+  --color-campo-2: #1f3f82;
+  --color-campo-3: #0f2553;
+  --color-campo-tinta: #c7d4ee;
+
+  /* Papel térmico */
+  --color-papel: #f7f7f3;
+  --color-papel-2: #efefe9;
+  --color-papel-3: #e2e2da;
+  --color-raya: #cdcdc4;
+  --color-borde-control: #8f8f88;
+
+  /* Tintas */
+  --color-tinta: #1c1c22;
+  --color-tinta-2: #4a4a53;
+  --color-tinta-3: #66666f;
+  --color-rojo: #bf2a2a;
+  --color-rojo-2: #9e2020;
+  --color-rojo-claro: #f7e4e1;
+  --color-sello: #1f4fa3;
+  --color-sello-2: #173f86;
+  --color-sello-claro: #e3eaf6;
+
+  /* Escalas heredadas remapeadas al mundo: neutros de papel, rojo de cinta y azul de sello. */
+  --color-slate-50: #f7f7f3;
+  --color-slate-100: #efefe9;
+  --color-slate-200: #e2e2da;
+  --color-slate-300: #cdcdc4;
+  --color-slate-400: #6f6f78;
+  --color-slate-500: #5e5e67;
+  --color-slate-600: #4a4a53;
+  --color-slate-700: #36363e;
+  --color-slate-800: #26262c;
+  --color-slate-900: #1c1c22;
+
+  --color-red-50: #f9ecea;
+  --color-red-100: #f3d9d6;
+  --color-red-200: #e8b7b2;
+  --color-red-300: #d98a83;
+  --color-red-500: #c83a36;
+  --color-red-600: #bf2a2a;
+  --color-red-700: #a52222;
+  --color-red-800: #871c1c;
+  --color-red-900: #6b1717;
+
+  --color-emerald-50: #e3eaf6;
+  --color-emerald-100: #cfdbf0;
+  --color-emerald-200: #adc1e6;
+  --color-emerald-300: #7f9dd6;
+  --color-emerald-500: #2f5eae;
+  --color-emerald-600: #1f4fa3;
+  --color-emerald-700: #1f4fa3;
+  --color-emerald-800: #173f86;
+  --color-emerald-900: #102f66;
+
+  --color-marca-50: #e8eef8;
+  --color-marca-100: #d3def1;
+  --color-marca-200: #adc1e6;
+  --color-marca-300: #7f9dd6;
+  --color-marca-400: #4f78c2;
+  --color-marca-500: #2f5eae;
+  --color-marca-600: #1f4fa3;
+  --color-marca-700: #1f4fa3;
+  --color-marca-800: #16316b;
+  --color-marca-900: #0f2350;
+
+  --shadow-hoja: 0 1px 0 rgb(8 20 50 / 0.35), 0 10px 24px -12px rgb(4 12 34 / 0.55);
+  --shadow-control: inset 0 1px 0 rgb(28 28 34 / 0.05);
 }
 
-/* Paleta de gráficos (validada para daltonismo en modo claro) */
-:root {
-  --viz-surface: #fcfcfb;
-  --viz-grid: #e1e0d9;
-  --viz-axis: #c3c2b7;
-  --viz-muted: #898781;
-  --viz-ink: #0b0b0b;
-  --viz-ink-2: #52514e;
-  --viz-serie-1: #2a78d6;
-  --viz-serie-2: #eb6834;
-  --viz-serie-3: #1baf7a;
-  --viz-bueno: #0ca30c;
-  --viz-alerta: #fab219;
-  --viz-critico: #d03b3b;
+/* Cifras de caja: monoespaciada tabular; los totales van a doble ancho como en la registradora. */
+@utility cifra {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-stretch: 87.5%;
+  letter-spacing: -0.01em;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
+@utility cifra-doble {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-stretch: 112.5%;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
-body {
-  @apply bg-slate-100 text-slate-800 antialiased;
+/* Rótulo de cinta: mayúsculas estrechas, como la cabecera impresa. */
+@utility rotulo {
+  font-family: var(--font-sans);
+  font-stretch: 80%;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+/* Borde dentado de papel cortado. */
+@utility dentado-abajo {
+  padding-bottom: 14px;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%;
+}
+
+@utility dentado-ambos {
+  padding-block: 14px;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 14px 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 51% repeat-x;
+}
+
+/* Sombra que respeta el borde dentado (box-shadow se recortaría con la máscara). */
+@utility sombra-cinta {
+  filter: drop-shadow(0 1px 0 rgb(8 20 50 / 0.3)) drop-shadow(0 12px 12px rgb(4 12 34 / 0.32));
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    background-color: var(--color-campo);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+    scrollbar-color: var(--color-campo-2) var(--color-campo-3);
+  }
+
+  ::selection {
+    background-color: #c9d6ef;
+    color: var(--color-tinta);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-sello);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-sello);
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  dialog::backdrop {
+    background: rgb(9 22 52 / 0.72);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes imprimir {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 @media print {
@@ -46,5 +191,10 @@ body {
   }
   body {
     background: white;
+  }
+  .sombra-cinta,
+  .shadow-hoja {
+    filter: none !important;
+    box-shadow: none !important;
   }
 }

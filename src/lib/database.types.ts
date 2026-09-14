@@ -170,7 +170,7 @@ export type Database = {
           actualizado_por?: string | null
           apertura_en?: string
           apertura_por?: string | null
-          base_caja_diaria: number
+          base_caja_diaria?: number
           cierre_en?: string | null
           cierre_por?: string | null
           estado?: Database["public"]["Enums"]["estado_jornada"]
@@ -251,6 +251,7 @@ export type Database = {
           numero: string | null
           observacion: string | null
           origen: Database["public"]["Enums"]["origen_reposicion"] | null
+          responsable: string | null
           ruc_dni: string | null
           serie: string | null
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
@@ -287,6 +288,7 @@ export type Database = {
           numero?: string | null
           observacion?: string | null
           origen?: Database["public"]["Enums"]["origen_reposicion"] | null
+          responsable?: string | null
           ruc_dni?: string | null
           serie?: string | null
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
@@ -323,6 +325,7 @@ export type Database = {
           numero?: string | null
           observacion?: string | null
           origen?: Database["public"]["Enums"]["origen_reposicion"] | null
+          responsable?: string | null
           ruc_dni?: string | null
           serie?: string | null
           tipo?: Database["public"]["Enums"]["tipo_movimiento"]
@@ -355,6 +358,51 @@ export type Database = {
             columns: ["jornada_id"]
             isOneToOne: false
             referencedRelation: "jornadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      observaciones_arqueo: {
+        Row: {
+          arqueo_id: number
+          creado_en: string
+          creado_por: string | null
+          diferencia: number | null
+          id: number
+          texto: string
+          total_contado: number | null
+        }
+        Insert: {
+          arqueo_id: number
+          creado_en?: string
+          creado_por?: string | null
+          diferencia?: number | null
+          id?: number
+          texto: string
+          total_contado?: number | null
+        }
+        Update: {
+          arqueo_id?: number
+          creado_en?: string
+          creado_por?: string | null
+          diferencia?: number | null
+          id?: number
+          texto?: string
+          total_contado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observaciones_arqueo_arqueo_id_fkey"
+            columns: ["arqueo_id"]
+            isOneToOne: false
+            referencedRelation: "arqueos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_arqueo_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "perfiles"
             referencedColumns: ["id"]
           },
         ]
@@ -471,7 +519,7 @@ export type Database = {
       fn_usuario_activo: { Args: never; Returns: boolean }
     }
     Enums: {
-      destino_retiro: "BANCO" | "OTRO"
+      destino_retiro: "BANCO" | "OTRO" | "GERENCIA"
       estado_arqueo: "CUADRA" | "REVISAR"
       estado_jornada: "ABIERTA" | "CERRADA"
       estado_sustento: "CON COMPROBANTE" | "SIN COMPROBANTE" | "PENDIENTE"
@@ -610,7 +658,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      destino_retiro: ["BANCO", "OTRO"],
+      destino_retiro: ["BANCO", "OTRO", "GERENCIA"],
       estado_arqueo: ["CUADRA", "REVISAR"],
       estado_jornada: ["ABIERTA", "CERRADA"],
       estado_sustento: ["CON COMPROBANTE", "SIN COMPROBANTE", "PENDIENTE"],

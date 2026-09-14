@@ -15,6 +15,7 @@ import type {
   MovimientoActualizar,
   MovimientoBD,
   MovimientoInsertar,
+  ObservacionArqueoBD,
   ParametrosActualizar,
   PerfilActualizar,
   PerfilBD,
@@ -27,6 +28,7 @@ export const claves = {
   catalogos: ['catalogos'] as const,
   jornadas: ['jornadas'] as const,
   arqueos: ['arqueos'] as const,
+  observaciones: ['observaciones_arqueo'] as const,
   perfiles: ['perfiles'] as const,
   auditoria: ['auditoria'] as const,
 };
@@ -52,7 +54,7 @@ export function useCatalogos() {
     queryKey: claves.catalogos,
     queryFn: async () => {
       const filas = await lanzar<CatalogoBD[]>(supabase.from('catalogos').select('*').order('tipo').order('orden').order('valor'));
-      const porTipo: CatalogosPorTipo = { AREA: [], MEDIO_PAGO: [], CUENTA: [], COMPROBANTE: [] };
+      const porTipo: CatalogosPorTipo = { RESPONSABLE: [], AREA: [], MEDIO_PAGO: [], CUENTA: [], COMPROBANTE: [] };
       for (const fila of filas) {
         const tipo = fila.tipo as TipoCatalogo;
         if (tipo in porTipo) porTipo[tipo].push(fila);
@@ -121,6 +123,16 @@ export function useArqueos(jornadaId: number | null | undefined) {
     queryKey: [...claves.arqueos, jornadaId ?? 0],
     queryFn: () => lanzar<ArqueoBD[]>(supabase.from('arqueos').select('*').eq('jornada_id', jornadaId!)),
     enabled: jornadaId !== null && jornadaId !== undefined,
+  });
+}
+
+/** Historial de observaciones de un arqueo, de la más reciente a la más antigua. */
+export function useObservacionesArqueo(arqueoId: number | null | undefined) {
+  return useQuery({
+    queryKey: [...claves.observaciones, arqueoId ?? 0],
+    queryFn: () =>
+      lanzar<ObservacionArqueoBD[]>(supabase.from('observaciones_arqueo').select('*').eq('arqueo_id', arqueoId!).order('creado_en', { ascending: false })),
+    enabled: arqueoId !== null && arqueoId !== undefined,
   });
 }
 
@@ -200,12 +212,29 @@ export function useActualizarJornada() {
   });
 }
 
+/**
+ * Guarda el conteo del arqueo y, si hay nota, la agrega al historial de observaciones.
+ * Con `soloNotaDe` el conteo no cambió: solo se registra la nota en ese arqueo.
+ */
 export function useGuardarArqueo() {
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: (valores: ArqueoInsertar) =>
-      lanzar<ArqueoBD>(supabase.from('arqueos').upsert(valores, { onConflict: 'jornada_id,caja' }).select().single()),
-    onSuccess: () => invalidar(claves.arqueos, claves.jornadas, claves.auditoria),
+    mutationFn: async (entrada: { valores: Omit<ArqueoInsertar, 'observacion'>; nota?: string | null; soloNotaDe?: number }) => {
+      const arqueoId =
+        entrada.soloNotaDe ?? (await lanzar<ArqueoBD>(supabase.from('arqueos').upsert(entrada.valores, { onConflict: 'jornada_id,caja' }).select().single())).id;
+      const nota = entrada.nota?.trim();
+      if (nota) {
+        await lanzar(
+          supabase
+            .from('observaciones_arqueo')
+            .insert({ arqueo_id: arqueoId, texto: nota, total_contado: entrada.valores.total_contado, diferencia: entrada.valores.diferencia })
+            .select()
+            .single(),
+        );
+      }
+      return arqueoId;
+    },
+    onSuccess: () => invalidar(claves.arqueos, claves.observaciones, claves.jornadas, claves.auditoria),
   });
 }
 

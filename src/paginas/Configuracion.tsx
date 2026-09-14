@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 import { Plus } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Encabezado } from '@/componentes/Layout';
-import { Alerta, Boton, Campo, Cargando, Entrada, Insignia, Tabla, Tarjeta, claseTd, claseTh } from '@/componentes/ui';
+import { Alerta, Boton, Campo, Cargando, Casilla, Entrada, Insignia, Segmentado, Tabla, Tarjeta, claseTd, claseTh } from '@/componentes/ui';
 import { useActualizarParametros, useAuditoria, useCatalogos, useGuardarCatalogo, useParametros, usePerfiles } from '@/datos/consultas';
 import { formatearSoles, leerMonto } from '@/dominio';
 import { mensajeError } from '@/lib/supabase';
@@ -12,19 +12,25 @@ type Pestana = 'parametros' | 'catalogos' | 'auditoria';
 
 export default function Configuracion() {
   const [pestana, setPestana] = useState<Pestana>('parametros');
-  const boton = (p: Pestana, etiqueta: string) => (
-    <button type="button" onClick={() => setPestana(p)} aria-pressed={pestana === p} className={clsx('rounded-lg px-3 py-1.5 text-sm font-medium', pestana === p ? 'bg-marca-800 text-white' : 'text-slate-600 hover:bg-slate-100')}>
-      {etiqueta}
-    </button>
-  );
   return (
     <>
-      <Encabezado titulo="Configuración" descripcion="Parámetros de las cajas, listas de valores y registro de cambios." />
-      <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        {boton('parametros', 'Parámetros')}
-        {boton('catalogos', 'Catálogos')}
-        {boton('auditoria', 'Auditoría')}
-      </div>
+      <Encabezado
+        titulo="Configuración"
+        descripcion="Parámetros de las cajas, listas de valores y registro de cambios."
+        acciones={
+          <Segmentado
+            className="bg-papel shadow-hoja"
+            etiqueta="Sección"
+            valor={pestana}
+            onCambio={setPestana}
+            opciones={[
+              { valor: 'parametros', etiqueta: 'Parámetros' },
+              { valor: 'catalogos', etiqueta: 'Catálogos' },
+              { valor: 'auditoria', etiqueta: 'Auditoría' },
+            ]}
+          />
+        }
+      />
       {pestana === 'parametros' && <Parametros />}
       {pestana === 'catalogos' && <Catalogos />}
       {pestana === 'auditoria' && <Auditoria />}
@@ -74,7 +80,6 @@ function Parametros() {
         caja_chica_min: min,
         caja_chica_max: max,
         caja_chica_alerta: alerta,
-        base_caja_diaria: base,
         saldo_inicial_caja_chica: saldoInicial,
         fecha_corte: valores.fechaCorte,
         tolerancia_arqueo: tolerancia,
@@ -99,7 +104,7 @@ function Parametros() {
           <Campo etiqueta="Máximo (S/)" requerido>
             <Entrada inputMode="decimal" value={valores.max} onChange={(e) => cambiar('max', e.target.value)} />
           </Campo>
-          <Campo etiqueta="Umbral de alerta (S/)" ayuda="Ámbar al bajar de este valor. Vacío para desactivarlo.">
+          <Campo etiqueta="Umbral de alerta (S/)" ayuda="Aviso en rojo al bajar de este valor. Vacío para desactivarlo.">
             <Entrada inputMode="decimal" value={valores.alerta} onChange={(e) => cambiar('alerta', e.target.value)} />
           </Campo>
           <Campo etiqueta="Fecha de corte" requerido ayuda="Desde cuándo se lleva el saldo">
@@ -112,8 +117,8 @@ function Parametros() {
       </Tarjeta>
       <Tarjeta titulo="Caja diaria y arqueo" subtitulo="Base para vuelto, tolerancia y turnos">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo etiqueta="Base caja diaria (S/)" requerido ayuda="Efectivo con el que abre cada jornada">
-            <Entrada inputMode="decimal" value={valores.base} onChange={(e) => cambiar('base', e.target.value)} />
+          <Campo etiqueta="Base inicial caja de fondo (S/)" ayuda="Solo lectura. La apertura diaria se calcula con el saldo anterior, los cobros y los envíos a gerencia.">
+            <Entrada value={valores.base} readOnly />
           </Campo>
           <Campo etiqueta="Tolerancia de arqueo (S/)" requerido ayuda="Diferencia máxima para que CUADRE">
             <Entrada inputMode="decimal" value={valores.tolerancia} onChange={(e) => cambiar('tolerancia', e.target.value)} />
@@ -121,7 +126,9 @@ function Parametros() {
           <Campo etiqueta="Inicio del turno noche" requerido>
             <Entrada type="time" value={valores.horaNoche} onChange={(e) => cambiar('horaNoche', e.target.value)} />
           </Campo>
-          <div className="self-end text-sm text-slate-500">Denominaciones: {parametros.data?.denominaciones.map((d) => formatearSoles(d)).join(', ')}</div>
+          <div className="self-end text-[13px] leading-relaxed text-tinta-3">
+            Denominaciones: <span className="cifra text-tinta-2">{parametros.data?.denominaciones.map((d) => formatearSoles(d)).join(' · ')}</span>
+          </div>
         </div>
       </Tarjeta>
       <div className="space-y-3 lg:col-span-2">
@@ -140,7 +147,7 @@ function Parametros() {
 function Catalogos() {
   const catalogos = useCatalogos();
   const guardar = useGuardarCatalogo();
-  const [nuevos, setNuevos] = useState<Record<TipoCatalogo, string>>({ AREA: '', MEDIO_PAGO: '', CUENTA: '', COMPROBANTE: '' });
+  const [nuevos, setNuevos] = useState<Record<TipoCatalogo, string>>({ RESPONSABLE: '', AREA: '', MEDIO_PAGO: '', CUENTA: '', COMPROBANTE: '' });
 
   async function agregar(tipo: TipoCatalogo) {
     const valor = nuevos[tipo].trim().toUpperCase();
@@ -158,19 +165,16 @@ function Catalogos() {
       <div className="grid gap-6 lg:grid-cols-2">
         {TIPOS_CATALOGO.map((tipo) => (
           <Tarjeta key={tipo} titulo={ETIQUETA_CATALOGO[tipo]} sinRelleno>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-papel-3">
               {catalogos.data?.[tipo].map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
-                  <span className={clsx(!c.activo && 'text-slate-400 line-through')}>{c.valor}</span>
-                  <label className="flex items-center gap-2 text-xs text-slate-500">
-                    <input type="checkbox" className="size-4 rounded border-slate-300" checked={c.activo} onChange={(e) => guardar.mutate({ id: c.id, valores: { tipo: c.tipo, valor: c.valor, activo: e.target.checked } })} />
-                    Activo
-                  </label>
+                <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-2 text-[14px]">
+                  <span className={clsx(!c.activo && 'text-tinta-3 line-through')}>{c.valor}</span>
+                  <Casilla etiqueta="Activo" className="text-[13px]" checked={c.activo} onChange={(e) => guardar.mutate({ id: c.id, valores: { tipo: c.tipo, valor: c.valor, activo: e.target.checked } })} />
                 </li>
               ))}
             </ul>
             <form
-              className="flex gap-2 border-t border-slate-100 p-4"
+              className="flex gap-2 border-t border-dashed border-raya p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 void agregar(tipo);
@@ -197,6 +201,7 @@ function describir(a: AuditoriaBD): string {
   }
   if (a.tabla === 'jornadas') return `Jornada ${String(registro.fecha ?? '')} · ${String(registro.estado ?? '')}`;
   if (a.tabla === 'arqueos') return `Arqueo caja ${String(registro.caja ?? '')} · contado ${formatearSoles(Number(registro.total_contado) || 0)} · ${String(registro.estado ?? '')}`;
+  if (a.tabla === 'observaciones_arqueo') return `Observación de arqueo · ${String(registro.texto ?? '')}`;
   if (a.tabla === 'parametros') return `Mín ${String(registro.caja_chica_min)} · Máx ${String(registro.caja_chica_max)} · Base ${String(registro.base_caja_diaria)}`;
   if (a.tabla === 'catalogos') return `${String(registro.tipo ?? '')} · ${String(registro.valor ?? '')} · ${registro.activo ? 'activo' : 'inactivo'}`;
   if (a.tabla === 'perfiles') return `${String(registro.nombre ?? '')} · ${String(registro.rol ?? '')} · ${registro.activo ? 'activo' : 'inactivo'}`;
@@ -214,7 +219,7 @@ function Auditoria() {
   return (
     <Tarjeta titulo="Últimos cambios" subtitulo="Quién hizo qué y cuándo. Los datos importados del Excel no tienen usuario." sinRelleno>
       <Tabla>
-        <thead className="bg-slate-50">
+        <thead>
           <tr>
             <th className={claseTh}>Fecha</th>
             <th className={claseTh}>Tabla</th>
@@ -223,15 +228,15 @@ function Auditoria() {
             <th className={claseTh}>Detalle</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-papel-3">
           {auditoria.data?.map((a) => (
             <tr key={a.id}>
-              <td className={`${claseTd} whitespace-nowrap`}>{new Date(a.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</td>
+              <td className={`${claseTd} cifra text-[12.5px] whitespace-nowrap`}>{new Date(a.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</td>
               <td className={claseTd}>{a.tabla}</td>
               <td className={claseTd}>
                 <Insignia tono={a.accion === 'INSERT' ? 'exito' : a.accion === 'DELETE' ? 'peligro' : 'info'}>{ETIQUETA_ACCION[a.accion] ?? a.accion}</Insignia>
               </td>
-              <td className={claseTd}>{a.usuario_id ? (nombres.get(a.usuario_id) ?? a.usuario_id.slice(0, 8)) : <span className="text-slate-400">Importación</span>}</td>
+              <td className={claseTd}>{a.usuario_id ? (nombres.get(a.usuario_id) ?? a.usuario_id.slice(0, 8)) : <span className="text-tinta-3">Importación</span>}</td>
               <td className={`${claseTd} max-w-md truncate`} title={describir(a)}>
                 {describir(a)}
               </td>

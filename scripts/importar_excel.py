@@ -5,20 +5,18 @@ Convierte el libro CAJA ACTUALIZADA (.xlsm, modelo doble caja) en:
 
 Uso:  python scripts/importar_excel.py ["ruta\\al\\archivo.xlsm"]
 """
-import sys, json, datetime, pathlib
+import sys, json, datetime, pathlib, math
 import openpyxl
 
-ORIGEN = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path(
-    r"C:\Users\programacion\Documents\Received Files\CAJA20ACTUALIZADA2010-09 (22).xlsm")
+ORIGEN = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else None
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 SEED = RAIZ / "supabase" / "seed.sql"
 FIXTURE = RAIZ / "src" / "dominio" / "fixtures" / "movimientos-excel.json"
 HOJA = "CAJA DIARIA"
-FILA_INICIO = 17
 
 PARAMETROS = {
     "caja_chica_min": 3000, "caja_chica_max": 5000, "caja_chica_alerta": 3500,
-    "base_caja_diaria": 500, "saldo_inicial_caja_chica": 4767.90, "fecha_corte": "2026-09-11",
+    "base_caja_diaria": 500, "saldo_inicial_caja_chica": 6032.90, "fecha_corte": "2026-09-14",
     "tolerancia_arqueo": 0.01, "hora_inicio_noche": "17:00",
 }
 INACTIVOS = {("COMPROBANTE", "SIN RE")}  # ya no se elige; el histórico lo conserva
@@ -52,9 +50,12 @@ def numero(v):
     if v is None or v == "":
         return 0.0
     try:
-        return round(float(v), 2)
+        n = float(v)
+        if not math.isfinite(n) or n < 0:
+            raise ValueError(f"Monto inválido: {v!r}")
+        return round(n, 2)
     except (TypeError, ValueError):
-        return 0.0
+        raise ValueError(f"Monto inválido: {v!r}") from None
 
 
 def fecha_iso(v):
@@ -81,7 +82,10 @@ def leer_movimientos():
     wb = openpyxl.load_workbook(ORIGEN, data_only=True, keep_vba=True)
     ws = wb[HOJA]
     movimientos, avisos = [], []
-    for fila in range(FILA_INICIO, ws.max_row + 1):
+    encabezados = [r for r in range(1, 31) if mayus(ws.cell(r, 2).value) == "FECHA" and mayus(ws.cell(r, 4).value) == "MOVIMIENTO"]
+    if not encabezados:
+        raise ValueError("No se encontró el encabezado del registro continuo")
+    for fila in range(max(encabezados) + 1, ws.max_row + 1):
         def c(col, fila=fila):
             return ws.cell(row=fila, column=col).value
         tipo_excel = mayus(c(4))
@@ -90,6 +94,8 @@ def leer_movimientos():
         notas = []
         caja_retiro = None
         fecha = fecha_iso(c(2))
+        if c(2).year == 2025:
+            notas.append("año original 2025 corregido a 2026 (error conocido del libro)")
         turno = mayus(c(3)) or "MAÑANA"
         if turno not in TURNOS:
             notas.append(f"turno original '{turno}'")
@@ -148,12 +154,10 @@ def leer_movimientos():
             if not medio_pago:
                 medio_pago = "EFECTIVO"
         else:
-            avisos.append(f"fila {fila}: tipo desconocido {tipo_excel!r}, omitida")
-            continue
+            raise ValueError(f"fila {fila}: tipo desconocido {tipo_excel!r}")
 
         if tipo != "INGRESO" and monto <= 0:
-            avisos.append(f"fila {fila}: {tipo} sin monto, omitida")
-            continue
+            raise ValueError(f"fila {fila}: {tipo} sin monto")
         if not area:
             area = "OTROS"
             notas.append("área vacía en el Excel, asignada a OTROS")
@@ -181,8 +185,9 @@ def leer_conteo():
     wb = openpyxl.load_workbook(ORIGEN, data_only=True, keep_vba=True)
     ws = wb[HOJA]
     conteo = {}
-    for fila in range(15, 26):
-        denominacion, cantidad = ws.cell(row=fila, column=22).value, ws.cell(row=fila, column=23).value
+    for fila in range(13, 26):
+        denominacion = ws.cell(row=fila, column=27).value or ws.cell(row=fila, column=22).value
+        cantidad = ws.cell(row=fila, column=23).value
         if isinstance(denominacion, (int, float)) and denominacion > 0:
             conteo[str(int(denominacion)) if float(denominacion).is_integer() else str(denominacion)] = int(numero(cantidad))
     return conteo
@@ -229,12 +234,16 @@ def escribir_seed(movs):
     lineas.append("")
     conteo = leer_conteo()
     if conteo:
-        ultima = max(m["fecha"] for m in movs)
+        ws = openpyxl.load_workbook(ORIGEN, data_only=True)[HOJA]
+        ultima = fecha_iso(ws['B4'].value)
         total = round(sum(float(d) * c for d, c in conteo.items()), 2)
+        teorico = numero(ws['J8'].value)
+        diferencia = round(total - teorico, 2)
+        estado = 'CUADRA' if abs(diferencia) <= PARAMETROS['tolerancia_arqueo'] else 'REVISAR'
         lineas.append("-- Conteo del arqueo del Excel: todo el efectivo junto, aún sin separar la base de la caja diaria.")
         lineas.append("insert into public.arqueos (jornada_id, caja, conteo, total_contado, total_teorico, diferencia, estado, observacion)")
-        lineas.append(f"select j.id, 'CHICA', {sql(json.dumps(conteo))}::jsonb, {total:.2f}, {total:.2f}, 0, 'CUADRA',")
-        lineas.append("       'Conteo del Excel: todo el efectivo del área. Define el fondo con el que arranca la caja chica el 11/09/2026.'")
+        lineas.append(f"select j.id, 'CHICA', {sql(json.dumps(conteo))}::jsonb, {total:.2f}, {teorico:.2f}, {diferencia:.2f}, '{estado}',")
+        lineas.append("       'Conteo del Excel al 13/09/2026. Saldo inicial de caja chica al 14/09; el fondo diario es independiente.'")
         lineas.append("from public.jornadas j")
         lineas.append(f"where j.fecha = '{ultima}'")
         lineas.append("on conflict (jornada_id, caja) do nothing;")
@@ -255,7 +264,17 @@ def escribir_fixture(movs):
 
 
 def main():
+    if ORIGEN is None:
+        raise SystemExit('Uso: python scripts/importar_excel.py "ruta/al/libro.xlsm"')
     movs, avisos = leer_movimientos()
+    ws = openpyxl.load_workbook(ORIGEN, data_only=True)[HOJA]
+    fecha_cierre = fecha_iso(ws['B4'].value)
+    conteo = leer_conteo()
+    contado = round(sum(float(d) * c for d, c in conteo.items()), 2)
+    if not conteo or contado != numero(ws['M8'].value):
+        raise ValueError('El conteo por denominaciones no coincide con el efectivo contado del Excel')
+    if fecha_cierre != '2026-09-13' or contado != 6032.90:
+        raise ValueError('Este corte fue autorizado para el cierre 13/09 por 6032.90. Definir un nuevo corte antes de importar otro libro.')
     escribir_seed(movs)
     escribir_fixture(movs)
     print(f"Origen: {ORIGEN}")

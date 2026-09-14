@@ -1,10 +1,11 @@
-import { Download, Pencil, Plus, XCircle } from 'lucide-react';
+import { clsx } from 'clsx';
+import { ChevronDown, Download, Pencil, Plus, Search, X, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { FormularioMovimiento } from '@/componentes/FormularioMovimiento';
 import { InsigniaSustento, InsigniaTipo } from '@/componentes/InsigniaTipo';
 import { Encabezado } from '@/componentes/Layout';
-import { Alerta, AreaTexto, Boton, Campo, Cargando, Entrada, Modal, Selector, Tabla, Tarjeta, Vacio, claseTd, claseTdNum, claseTh, claseThNum } from '@/componentes/ui';
+import { Alerta, AreaTexto, Boton, BotonIcono, Campo, Cargando, Casilla, Correlativo, Entrada, Insignia, LineaCinta, Modal, Selector, Tabla, Tarjeta, Vacio, claseTd, claseTdNum, claseTh, claseThNum } from '@/componentes/ui';
 import { useAnularMovimiento, useCatalogos, useDatosCaja, useJornadas } from '@/datos/consultas';
 import {
   ESTADOS_SUSTENTO,
@@ -113,6 +114,7 @@ export default function Movimientos() {
           'Medio de pago': m.medio_pago ?? '',
           Cuenta: m.cuenta ?? '',
           'N° operación': m.num_operacion ?? '',
+          Responsable: m.responsable ?? '',
           'Ingreso digital': m.tipo === 'INGRESO' ? m.monto_digital : '',
           'Ingreso efectivo': m.tipo === 'INGRESO' ? m.monto_efectivo : '',
           Egreso: m.tipo === 'EGRESO' ? m.monto : '',
@@ -123,7 +125,7 @@ export default function Movimientos() {
           Observación: m.observacion ?? '',
           Anulado: m.anulado ? 'SÍ' : '',
         })),
-        anchos: [6, 11, 9, 20, 16, 12, 8, 10, 12, 30, 20, 50, 14, 12, 14, 14, 14, 12, 12, 12, 14, 10, 40, 8],
+        anchos: [6, 11, 9, 20, 16, 12, 8, 10, 12, 30, 20, 50, 14, 12, 14, 16, 14, 14, 12, 12, 12, 14, 10, 40, 8],
       },
     ]);
   }
@@ -136,6 +138,9 @@ export default function Movimientos() {
   }
 
   const cambiar = (parcial: Partial<Filtros>) => setFiltros((f) => ({ ...f, ...parcial }));
+  const filtrosActivos = [filtros.tipo, filtros.turno, filtros.area, filtros.medio, filtros.sustento, filtros.texto.trim(), filtros.anulados].filter(Boolean).length;
+  const hayFiltros = filtrosActivos > 0;
+  const [verFiltros, setVerFiltros] = useState(false);
 
   return (
     <>
@@ -144,10 +149,10 @@ export default function Movimientos() {
         descripcion="Registro continuo de ingresos, egresos, reposiciones y retiros."
         acciones={
           <>
-            <Boton variante="secundario" icono={<Download className="size-4" />} onClick={exportar} disabled={!filtrados.length}>
+            <Boton variante="secundario" icono={<Download className="size-4" aria-hidden />} onClick={exportar} disabled={!filtrados.length}>
               Exportar Excel
             </Boton>
-            <Boton icono={<Plus className="size-4" />} onClick={() => setNuevo(true)}>
+            <Boton icono={<Plus className="size-4" aria-hidden />} onClick={() => setNuevo(true)}>
               Nuevo movimiento
             </Boton>
           </>
@@ -155,13 +160,28 @@ export default function Movimientos() {
       />
       {error ? <Alerta tono="peligro" className="mb-4">{mensajeError(error)}</Alerta> : null}
 
-      <Tarjeta className="no-imprimir mb-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+      <Tarjeta className="no-imprimir mb-5">
+        {/* En pantallas chicas los filtros se pliegan para que los movimientos aparezcan primero. */}
+        <button
+          type="button"
+          onClick={() => setVerFiltros((v) => !v)}
+          aria-expanded={verFiltros}
+          className="-m-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-center justify-between rounded-[3px] p-1 text-left lg:hidden"
+        >
+          <span className="rotulo text-[13px] text-tinta">
+            Filtros {filtrosActivos > 0 && <span className="cifra ml-1 text-sello">({filtrosActivos})</span>}
+          </span>
+          <span className="flex items-center gap-1.5 text-[13px] text-tinta-2">
+            <span className="cifra">{formatearFecha(filtros.desde, 'diaMes')} → {formatearFecha(filtros.hasta, 'diaMes')}</span>
+            <ChevronDown className={clsx('size-4 transition-transform duration-150', verFiltros && 'rotate-180')} aria-hidden />
+          </span>
+        </button>
+        <div className={clsx('gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-4 2xl:grid-cols-[160px_160px_repeat(5,minmax(0,1fr))_minmax(0,1.5fr)]', verFiltros ? 'mt-4 grid lg:mt-0' : 'hidden')}>
           <Campo etiqueta="Desde">
-            <Entrada type="date" value={filtros.desde} onChange={(e) => e.target.value && cambiar({ desde: e.target.value })} />
+            <Entrada type="date" value={filtros.desde} onChange={(e) => e.target.value && cambiar({ desde: e.target.value })} className="cifra text-[13px]" />
           </Campo>
           <Campo etiqueta="Hasta">
-            <Entrada type="date" value={filtros.hasta} onChange={(e) => e.target.value && cambiar({ hasta: e.target.value })} />
+            <Entrada type="date" value={filtros.hasta} onChange={(e) => e.target.value && cambiar({ hasta: e.target.value })} className="cifra text-[13px]" />
           </Campo>
           <Campo etiqueta="Tipo">
             <Selector value={filtros.tipo} onChange={(e) => cambiar({ tipo: e.target.value })}>
@@ -214,37 +234,52 @@ export default function Movimientos() {
             </Selector>
           </Campo>
           <Campo etiqueta="Buscar">
-            <Entrada type="search" placeholder="Descripción, nombre, n.º…" value={filtros.texto} onChange={(e) => cambiar({ texto: e.target.value })} />
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-tinta-3" aria-hidden />
+              <Entrada type="search" placeholder="Descripción, nombre, n.º…" value={filtros.texto} onChange={(e) => cambiar({ texto: e.target.value })} className="pl-9" />
+            </div>
           </Campo>
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" className="size-4 rounded border-slate-300" checked={filtros.anulados} onChange={(e) => cambiar({ anulados: e.target.checked })} />
-          Mostrar anulados
-        </label>
+        <div className={clsx('mt-3 flex-wrap items-center justify-between gap-3 lg:flex', verFiltros ? 'flex' : 'hidden')}>
+          <Casilla etiqueta="Mostrar anulados" checked={filtros.anulados} onChange={(e) => cambiar({ anulados: e.target.checked })} />
+          {hayFiltros && (
+            <Boton variante="fantasma" tamano="sm" icono={<X className="size-4" aria-hidden />} onClick={() => setFiltros((f) => ({ ...f, tipo: '', turno: '', area: '', medio: '', sustento: '', texto: '', anulados: false }))}>
+              Quitar filtros
+            </Boton>
+          )}
+        </div>
       </Tarjeta>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Resumen etiqueta="Ingresos digitales" valor={totales.digital} />
-        <Resumen etiqueta="Ingresos en efectivo" valor={totales.efectivo} />
-        <Resumen etiqueta="Egresos" valor={totales.egresos} />
-        <Resumen etiqueta="Reposiciones" valor={totales.reposiciones} />
-        <Resumen etiqueta="Retiros" valor={totales.retiros} />
-      </div>
+      {/* Totales del filtro como renglones de libro */}
+      <Tarjeta className="mb-5" titulo="Totales del filtro">
+        <div className="grid gap-x-10 gap-y-2 lg:grid-cols-2">
+          <dl>
+            <LineaCinta etiqueta="Ingresos digitales" monto={totales.digital} />
+            <LineaCinta etiqueta="Ingresos en efectivo" monto={totales.efectivo} />
+            <LineaCinta etiqueta="Reposiciones de caja chica" monto={totales.reposiciones} signo="+" />
+          </dl>
+          <dl>
+            <LineaCinta etiqueta="Egresos de caja chica" monto={totales.egresos} signo="−" salida />
+            <LineaCinta etiqueta="Retiros" monto={totales.retiros} signo="−" salida />
+          </dl>
+        </div>
+      </Tarjeta>
 
-      <Tarjeta sinRelleno titulo={`${filtrados.length} movimiento${filtrados.length === 1 ? '' : 's'}`} subtitulo={`${formatearFecha(filtros.desde)} al ${formatearFecha(filtros.hasta)}`}>
+      <Tarjeta sinRelleno titulo={`${filtrados.length} movimiento${filtrados.length === 1 ? '' : 's'}`} subtitulo={<span className="cifra text-[12.5px]">{formatearFecha(filtros.desde)} al {formatearFecha(filtros.hasta)}</span>}>
         {cargando ? (
           <Cargando />
         ) : filtrados.length === 0 ? (
           <Vacio titulo="Sin movimientos con esos filtros" descripcion="Cambia el rango de fechas o registra el primer movimiento del período." accion={<Boton onClick={() => setNuevo(true)}>Nuevo movimiento</Boton>} />
         ) : (
+          <>
+          <div className="hidden md:block">
           <Tabla>
-            <thead className="bg-slate-50">
+            <thead>
               <tr>
-                <th className={claseTh}>Fecha</th>
+                <th className={claseTh}>Fecha · N.º</th>
                 <th className={claseTh}>Tipo</th>
-                <th className={claseTh}>Comprobante</th>
-                <th className={claseTh}>Nombre</th>
-                <th className={claseTh}>Descripción</th>
+                <th className={claseTh}>Descripción · Nombre</th>
+                <th className={`${claseTh} hidden 2xl:table-cell`}>Comprobante</th>
                 <th className={claseTh}>Área</th>
                 <th className={`${claseTh} hidden 2xl:table-cell`}>Medio</th>
                 <th className={claseThNum}>Importe</th>
@@ -254,63 +289,120 @@ export default function Movimientos() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtrados.slice(0, 500).map((m) => (
-                <tr key={m.id} className={m.anulado ? 'bg-slate-50 text-slate-400 line-through' : 'hover:bg-slate-50'}>
-                  <td className={`${claseTd} whitespace-nowrap`}>
-                    {formatearFecha(m.fecha)}
-                    <span className="block text-xs text-slate-400">{m.turno === 'MAÑANA' ? 'Mañana' : 'Noche'}</span>
-                  </td>
-                  <td className={claseTd}>
-                    <InsigniaTipo tipo={m.tipo} />
-                    {m.tipo === 'RETIRO' && m.caja_retiro && <span className="block text-xs text-slate-400">de {ETIQUETA_CAJA[m.caja_retiro].toLowerCase()}</span>}
-                    {m.tipo === 'REPOSICION_CAJA_CHICA' && m.origen && <span className="block text-xs text-slate-400">desde {ETIQUETA_ORIGEN[m.origen].toLowerCase()}</span>}
-                  </td>
-                  <td className={`${claseTd} whitespace-nowrap`}>
-                    {m.comprobante ?? '—'}
-                    {(m.serie || m.numero) && <span className="block text-xs text-slate-400">{[m.serie, m.numero].filter(Boolean).join('-')}</span>}
-                  </td>
-                  <td className={`${claseTd} max-w-40`}>
-                    <span className="block truncate" title={m.nombre ?? ''}>
-                      {m.nombre ?? '—'}
-                    </span>
-                    {m.ruc_dni && <span className="block text-xs text-slate-400">{m.ruc_dni}</span>}
-                  </td>
-                  <td className={`${claseTd} max-w-56`}>
-                    <span className="block truncate" title={m.descripcion}>
-                      {m.descripcion}
-                    </span>
-                    {m.anulado && <span className="block text-xs text-red-500 no-underline">Anulado</span>}
-                  </td>
-                  <td className={claseTd}>{m.area ?? '—'}</td>
-                  <td className={`${claseTd} hidden 2xl:table-cell`}>{m.medio_pago ?? '—'}</td>
-                  <td className={`${claseTdNum} font-semibold`}>
-                    {formatearSoles(montoTotal(m))}
-                    {m.tipo === 'INGRESO' && m.monto_digital > 0 && m.monto_efectivo > 0 && (
-                      <span className="block text-xs font-normal text-slate-400">
-                        {formatearSoles(m.monto_digital)} dig. + {formatearSoles(m.monto_efectivo)} ef.
+            <tbody className="divide-y divide-papel-3">
+              {filtrados.slice(0, 500).map((m) => {
+                const sale = m.tipo !== 'INGRESO' && m.tipo !== 'REPOSICION_CAJA_CHICA';
+                return (
+                  <tr key={m.id} className={m.anulado ? 'bg-papel-2 text-tinta-3 [&_td]:text-tinta-3' : 'transition-colors duration-100 hover:bg-white'}>
+                    <td className={`${claseTd} whitespace-nowrap`}>
+                      <span className="cifra block text-[13px]">{formatearFecha(m.fecha)}</span>
+                      <span className="block text-[11.5px] text-tinta-3">
+                        <Correlativo numero={m.id} className="text-[11.5px]" /> · {m.turno === 'MAÑANA' ? 'Mañana' : 'Noche'}
                       </span>
-                    )}
-                  </td>
-                  <td className={claseTd}>{m.tipo === 'INGRESO' || m.tipo === 'EGRESO' ? <InsigniaSustento estado={m.estado_sustento} /> : <span className="text-slate-300">—</span>}</td>
-                  <td className={`${claseTd} no-imprimir whitespace-nowrap`}>
-                    {puedeEditar(m) && (
-                      <>
-                        <button type="button" onClick={() => setEditando(m)} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-marca-700" aria-label={`Editar movimiento ${m.id}`}>
-                          <Pencil className="size-4" />
-                        </button>
-                        <button type="button" onClick={() => setAnulando(m)} className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700" aria-label={`Anular movimiento ${m.id}`}>
-                          <XCircle className="size-4" />
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      {m.responsable && <span className="block max-w-[9rem] truncate text-[11.5px] text-tinta-2" title={m.responsable}>Resp. {m.responsable}</span>}
+                    </td>
+                    <td className={claseTd}>
+                      <InsigniaTipo tipo={m.tipo} />
+                      {m.tipo === 'RETIRO' && m.caja_retiro && <span className="mt-1 block text-[12px] text-tinta-3">de {ETIQUETA_CAJA[m.caja_retiro].toLowerCase()}</span>}
+                      {m.tipo === 'REPOSICION_CAJA_CHICA' && m.origen && <span className="mt-1 block text-[12px] text-tinta-3">desde {ETIQUETA_ORIGEN[m.origen].toLowerCase()}</span>}
+                      {(m.comprobante || m.serie || m.numero) && (
+                        <span className="cifra mt-1 block text-[11.5px] whitespace-nowrap text-tinta-3 2xl:hidden">{[m.comprobante, [m.serie, m.numero].filter(Boolean).join('-')].filter(Boolean).join(' ')}</span>
+                      )}
+                    </td>
+                    <td className={claseTd}>
+                      <span className={clsx('block max-w-[16rem] truncate 2xl:max-w-[22rem]', m.anulado && 'line-through')} title={m.descripcion}>
+                        {m.descripcion}
+                      </span>
+                      {(m.nombre || m.ruc_dni) && (
+                        <span className="block max-w-[16rem] truncate text-[12.5px] text-tinta-3 2xl:max-w-[22rem]" title={m.nombre ?? ''}>
+                          {m.nombre ?? '—'}
+                          {m.ruc_dni && <span className="cifra"> · {m.ruc_dni}</span>}
+                        </span>
+                      )}
+                      {m.anulado && (
+                        <Insignia tono="peligro" className="mt-1">
+                          Anulado
+                        </Insignia>
+                      )}
+                    </td>
+                    <td className={`${claseTd} hidden whitespace-nowrap 2xl:table-cell`}>
+                      {m.comprobante ?? '—'}
+                      {(m.serie || m.numero) && <span className="cifra block text-[12px] text-tinta-3">{[m.serie, m.numero].filter(Boolean).join('-')}</span>}
+                    </td>
+                    <td className={`${claseTd} text-[13px]`}>{m.area ?? '—'}</td>
+                    <td className={`${claseTd} hidden 2xl:table-cell`}>{m.medio_pago ?? '—'}</td>
+                    <td className={clsx(claseTdNum, 'font-semibold', sale && !m.anulado && 'text-rojo', m.anulado && 'line-through')}>
+                      {sale ? '−' : ''}
+                      {formatearSoles(montoTotal(m))}
+                      {m.tipo === 'INGRESO' && m.monto_digital > 0 && m.monto_efectivo > 0 && (
+                        <span className="block text-[11.5px] font-normal text-tinta-3">
+                          {formatearSoles(m.monto_digital)} dig. + {formatearSoles(m.monto_efectivo)} ef.
+                        </span>
+                      )}
+                    </td>
+                    <td className={claseTd}>{m.tipo === 'INGRESO' || m.tipo === 'EGRESO' ? <InsigniaSustento estado={m.estado_sustento} /> : <span className="text-tinta-3">—</span>}</td>
+                    <td className={`${claseTd} no-imprimir py-1.5 whitespace-nowrap`}>
+                      {puedeEditar(m) && (
+                        <div className="flex gap-0.5">
+                          <BotonIcono etiqueta={`Editar movimiento ${m.id}`} onClick={() => setEditando(m)}>
+                            <Pencil className="size-4" aria-hidden />
+                          </BotonIcono>
+                          <BotonIcono etiqueta={`Anular movimiento ${m.id}`} onClick={() => setAnulando(m)} className="hover:bg-rojo-claro hover:text-rojo">
+                            <XCircle className="size-4" aria-hidden />
+                          </BotonIcono>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Tabla>
+          </div>
+          <ol className="divide-y divide-dashed divide-raya md:hidden">
+            {filtrados.slice(0, 500).map((m) => {
+              const sale = m.tipo !== 'INGRESO' && m.tipo !== 'REPOSICION_CAJA_CHICA';
+              return (
+                <li key={m.id} className={clsx('px-4 py-3', m.anulado && 'bg-papel-2')}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-[12px] text-tinta-3">
+                      <span className="cifra text-tinta-2">{formatearFecha(m.fecha)}</span> · <Correlativo numero={m.id} className="text-[12px]" />
+                    </p>
+                    <p className={clsx('cifra shrink-0 text-[15px] font-semibold', sale && !m.anulado ? 'text-rojo' : 'text-tinta', m.anulado && 'line-through')}>
+                      {sale ? '−' : ''}
+                      {formatearSoles(montoTotal(m))}
+                    </p>
+                  </div>
+                  <p className={clsx('mt-1 text-[14px] leading-snug text-tinta', m.anulado && 'text-tinta-3 line-through')}>{m.descripcion}</p>
+                  {(m.nombre || m.responsable) && (
+                    <p className="mt-0.5 truncate text-[12.5px] text-tinta-3">
+                      {m.nombre}
+                      {m.nombre && m.responsable && ' · '}
+                      {m.responsable && <>Resp. {m.responsable}</>}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <InsigniaTipo tipo={m.tipo} />
+                    {(m.tipo === 'INGRESO' || m.tipo === 'EGRESO') && <InsigniaSustento estado={m.estado_sustento} />}
+                    {m.anulado && <Insignia tono="peligro">Anulado</Insignia>}
+                    {puedeEditar(m) && (
+                      <span className="no-imprimir ml-auto flex gap-0.5">
+                        <BotonIcono etiqueta={`Editar movimiento ${m.id}`} onClick={() => setEditando(m)}>
+                          <Pencil className="size-4" aria-hidden />
+                        </BotonIcono>
+                        <BotonIcono etiqueta={`Anular movimiento ${m.id}`} onClick={() => setAnulando(m)} className="hover:bg-rojo-claro hover:text-rojo">
+                          <XCircle className="size-4" aria-hidden />
+                        </BotonIcono>
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          </>
         )}
-        {filtrados.length > 500 && <p className="px-5 py-3 text-xs text-slate-500">Se muestran los primeros 500. Ajusta los filtros o exporta a Excel para ver todo.</p>}
+        {filtrados.length > 500 && <p className="border-t border-dashed border-raya px-5 py-3 text-[13px] text-tinta-3">Se muestran los primeros 500. Ajusta los filtros o exporta a Excel para ver todo.</p>}
       </Tarjeta>
 
       <FormularioMovimiento abierto={nuevo} onCerrar={() => setNuevo(false)} />
@@ -318,7 +410,7 @@ export default function Movimientos() {
 
       <Modal
         abierto={Boolean(anulando)}
-        titulo={`Anular movimiento #${anulando?.id ?? ''}`}
+        titulo={`Anular movimiento N.º ${String(anulando?.id ?? '').padStart(6, '0')}`}
         onCerrar={() => setAnulando(undefined)}
         ancho="sm"
         pie={
@@ -327,23 +419,22 @@ export default function Movimientos() {
               Cancelar
             </Boton>
             <Boton variante="peligro" onClick={() => void confirmarAnulacion()} cargando={anular.isPending} disabled={motivo.trim().length < 3}>
-              Anular
+              Anular movimiento
             </Boton>
           </>
         }
       >
         {anulando && (
           <div className="space-y-3">
-            <p className="text-sm text-slate-600">
-              El movimiento no se borra: queda marcado como anulado, deja de sumar en los saldos y se conserva en la auditoría.
-            </p>
-            <p className="rounded-lg bg-slate-50 p-3 text-sm">
-              <span className="font-semibold">{anulando.descripcion}</span>
-              <br />
-              {formatearFecha(anulando.fecha)} · {ETIQUETA_TIPO[anulando.tipo]} · {formatearSoles(montoTotal(anulando))}
-            </p>
+            <p className="text-[14px] leading-relaxed text-tinta-2">El movimiento no se borra: queda marcado como anulado, deja de sumar en los saldos y se conserva en la auditoría.</p>
+            <div className="rounded-[3px] border border-dashed border-tinta-3/40 bg-white px-4 py-3">
+              <p className="font-semibold text-tinta">{anulando.descripcion}</p>
+              <p className="cifra mt-1 text-[12.5px] text-tinta-3">
+                {formatearFecha(anulando.fecha)} · {ETIQUETA_TIPO[anulando.tipo]} · {formatearSoles(montoTotal(anulando))}
+              </p>
+            </div>
             <Campo etiqueta="Motivo" requerido>
-              <AreaTexto value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} placeholder="Ej. Se registró dos veces" />
+              <AreaTexto value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} placeholder="Ej. Se registró dos veces" data-autofoco />
             </Campo>
             {anular.error ? <Alerta tono="peligro">{mensajeError(anular.error)}</Alerta> : null}
           </div>
@@ -353,11 +444,3 @@ export default function Movimientos() {
   );
 }
 
-function Resumen({ etiqueta, valor }: { etiqueta: string; valor: number }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{etiqueta}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums">{formatearSoles(valor)}</p>
-    </div>
-  );
-}

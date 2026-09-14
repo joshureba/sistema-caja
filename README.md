@@ -1,6 +1,8 @@
 # Sistema de Caja: caja diaria y caja chica
 
-Aplicación web que reemplaza los libros Excel con macros del área. Lleva la **caja diaria** (base para vuelto más cobros del día) y la **caja chica** (fondo para gastos con reposiciones), con arqueo por denominaciones, cierre de jornada, dashboard, histórico, exportación a Excel, usuarios con roles y auditoría.
+Aplicación web que reemplaza los libros Excel con macros del área. Lleva la **caja de fondo (diaria)**, que arrastra el saldo anterior, suma cobros en efectivo y descuenta envíos a gerencia, y la **caja chica**, que cubre gastos. La apertura del fondo se calcula en la base de datos y no admite un monto manual. Desde el 15/09/2026 la caja chica solo admite salidas. Incluye arqueo, cierre, dashboard, histórico, exportación, roles y auditoría.
+
+Base vigente: `CAJA AUTOMATIZADA 2026 (TEMPORAL SOLO POR HOY 14-09).xlsm`, con 125 movimientos hasta el 13/09. El cierre contado de S/ 6,032.90 pasa a caja chica al 14/09; se registra la última salida de S/ 500 para abrir el fondo. Resultado de apertura: **caja chica S/ 5,532.90 y fondo S/ 500**, antes de nuevas operaciones. Los cobros digitales se muestran en ingresos, pero no forman parte del efectivo físico.
 
 - Frontend: React 19 + Vite + TypeScript + Tailwind CSS + Recharts.
 - Backend: Supabase (Postgres, Auth, RLS). Migraciones en `supabase/migrations`.
@@ -30,7 +32,7 @@ npm run dev
 ## Pruebas y verificación
 
 ```bash
-npm test          # pruebas del dominio (33 casos contra los valores del Excel)
+npm test          # 42 pruebas, incluidos ambos libros, el dashboard y los envíos a gerencia
 npm run typecheck # TypeScript
 npm run build     # build de producción en dist/
 ```
@@ -45,7 +47,7 @@ npm run build     # build de producción en dist/
 | `src/componentes` | Componentes de interfaz, formulario de movimiento, contador de denominaciones, gráficos. |
 | `src/paginas` | Dashboard, Movimientos, Caja diaria (jornada), Caja chica, Histórico, Configuración, Usuarios. |
 | `supabase/migrations` | Esquema, triggers de auditoría, vista de resumen diario y políticas RLS. |
-| `supabase/seed.sql` | Parámetros, catálogos, jornadas y los 83 movimientos importados del Excel. |
+| `supabase/seed.sql` | Parámetros, catálogos, jornadas y los 125 movimientos importados del Excel vigente. |
 | `scripts/importar_excel.py` | Genera `seed.sql` y el fixture de pruebas a partir del libro Excel. |
 
 ## Puesta en producción (Supabase + hosting estático)
@@ -60,10 +62,11 @@ npm run build     # build de producción en dist/
 
 ```bash
 python scripts/importar_excel.py "ruta\al\libro.xlsm"
-npm run db:reset
 ```
 
-El script limpia los datos (espacios, años mal digitados, retiros registrados como egresos) y deja una nota en la observación de cada movimiento ajustado.
+El script valida el cierre autorizado del 13/09 por S/ 6,032.90, detecta los encabezados y lee las denominaciones en AA o V. Limpia espacios, corrige los tres años 2025 conocidos y separa retiros de gastos con observaciones. Mantiene los importes cero del archivo; no inventa montos. Genera archivos locales, no sincroniza automáticamente una base existente.
+
+La migración `20260914000000_actualizar_excel_y_separar_cajas.sql` guarda un respaldo privado en `respaldo_caja.antes_20260914`, verifica la importación anterior, carga el nuevo libro y registra la base final una vez. Se detiene ante importaciones modificadas o registros manuales del 11 al 13 que requieran conciliación. Para otro Excel se debe preparar una nueva migración y conciliar el corte; no ejecutar `db:reset` contra una caja en uso.
 
 ## Respaldo
 

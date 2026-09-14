@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T00:00:00-05:00",
+  "title": "Design System: Sistema de Caja",
+  "extensions": {
+    "colorMeta": {
+      "campo": { "role": "tertiary", "displayName": "Mostrador azul del logo", "canonical": "#16316b", "tonalRamp": ["#0f2350", "#16316b", "#1f4fa3", "#2f5eae", "#4f78c2", "#7f9dd6", "#adc1e6", "#e8eef8"] },
+      "campo-2": { "role": "tertiary", "displayName": "Mostrador en hover", "canonical": "#1f3f82" },
+      "campo-3": { "role": "tertiary", "displayName": "Mostrador hondo", "canonical": "#0f2553" },
+      "campo-tinta": { "role": "tertiary", "displayName": "Texto sobre mostrador", "canonical": "#c7d4ee" },
+      "papel": { "role": "neutral", "displayName": "Papel térmico", "canonical": "#f7f7f3", "tonalRamp": ["#1c1c22", "#26262c", "#36363e", "#4a4a53", "#6f6f78", "#cdcdc4", "#e2e2da", "#f7f7f3"] },
+      "papel-2": { "role": "neutral", "displayName": "Papel gastado", "canonical": "#efefe9" },
+      "papel-3": { "role": "neutral", "displayName": "Papel sombra", "canonical": "#e2e2da" },
+      "raya": { "role": "neutral", "displayName": "Raya", "canonical": "#cdcdc4" },
+      "borde-control": { "role": "neutral", "displayName": "Borde de control", "canonical": "#8f8f88" },
+      "blanco": { "role": "neutral", "displayName": "Blanco de control", "canonical": "#ffffff" },
+      "tinta": { "role": "neutral", "displayName": "Tinta negra", "canonical": "#1c1c22" },
+      "tinta-2": { "role": "neutral", "displayName": "Tinta de etiqueta", "canonical": "#4a4a53" },
+      "tinta-3": { "role": "neutral", "displayName": "Tinta tenue", "canonical": "#66666f" },
+      "rojo": { "role": "secondary", "displayName": "Tinta roja de cinta", "canonical": "#bf2a2a", "tonalRamp": ["#6b1717", "#871c1c", "#a52222", "#bf2a2a", "#d98a83", "#e8b7b2", "#f3d9d6", "#f9ecea"] },
+      "rojo-2": { "role": "secondary", "displayName": "Rojo crítico", "canonical": "#9e2020" },
+      "rojo-claro": { "role": "secondary", "displayName": "Rojo lavado", "canonical": "#f7e4e1" },
+      "sello": { "role": "primary", "displayName": "Azul de sello", "canonical": "#1f4fa3", "tonalRamp": ["#102f66", "#173f86", "#1f4fa3", "#2f5eae", "#7f9dd6", "#adc1e6", "#cfdbf0", "#e3eaf6"] },
+      "sello-2": { "role": "primary", "displayName": "Sello en hover", "canonical": "#173f86" },
+      "sello-claro": { "role": "primary", "displayName": "Sello lavado", "canonical": "#e3eaf6" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Doble ancho", "purpose": "Saldo o total de cada cinta (MontoDoble, utilidad cifra-doble); 30px principal, 26/22/18px secundarios." },
+      "headline": { "displayName": "Encabezado", "purpose": "Título de página en blanco sobre el campo." },
+      "title": { "displayName": "Título", "purpose": "Modales, fecha larga de jornada, inicio de sesión." },
+      "body": { "displayName": "Cuerpo", "purpose": "Texto corriente; 14px en renglones, tablas y controles." },
+      "label": { "displayName": "Rótulo", "purpose": "Títulos de cinta y hoja, cabeceras de tabla (utilidad rotulo)." },
+      "cifra": { "displayName": "Cifra", "purpose": "Montos, fechas, horas, correlativos y conteos (utilidad cifra)." },
+      "sello": { "displayName": "Sello", "purpose": "Estados rectangulares (Insignia)." }
+    },
+    "shadows": [
+      { "name": "hoja", "value": "0 1px 0 rgb(8 20 50 / 0.35), 0 10px 24px -12px rgb(4 12 34 / 0.55)", "purpose": "Hojas de papel y navegador de día sobre el campo." },
+      { "name": "sombra-cinta", "value": "drop-shadow(0 1px 0 rgb(8 20 50 / 0.3)) drop-shadow(0 12px 12px rgb(4 12 34 / 0.32))", "purpose": "Filtro para cintas dentadas; la máscara recortaría un box-shadow." },
+      { "name": "labio", "value": "0 1px 0 rgb(8 20 50 / 0.35)", "purpose": "Botones sólidos, pestaña activa, placa del logo, segmento activo." },
+      { "name": "control", "value": "inset 0 1px 0 rgb(28 28 34 / 0.05)", "purpose": "Entradas y selectores." },
+      { "name": "modal", "value": "0 24px 60px -20px rgb(0 0 0 / 0.6)", "purpose": "Diálogo nativo; telón rgb(9 22 52 / 0.72)." }
+    ],
+    "motion": [
+      { "name": "estado", "value": "150ms", "purpose": "Transición de color y borde en botones, navegación y controles." },
+      { "name": "pulsar", "value": "translateY(1px)", "purpose": "Botones al pulsar, como tecla de registradora." },
+      { "name": "imprimir", "value": "900ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Cinta de carga que se revela de arriba abajo con clip-path." },
+      { "name": "movimiento-reducido", "value": "0.01ms", "purpose": "prefers-reduced-motion anula animaciones y transiciones." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "contenido-max", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primario",
+      "description": "Acción principal en azul de sello.",
+      "html": "<button class=\"ds-boton ds-boton-primario\">Guardar arqueo</button>",
+      "css": ".ds-boton { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 3px; font: 600 14px 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; border: 0; cursor: pointer; transition: background-color 150ms, border-color 150ms, color 150ms, transform 150ms; } .ds-boton:active { transform: translateY(1px); } .ds-boton:focus-visible { outline: 2px solid var(--color-sello, #1f4fa3); outline-offset: 2px; } .ds-boton-primario { background: var(--color-sello, #1f4fa3); color: #fff; box-shadow: 0 1px 0 rgb(8 20 50 / 0.35); } .ds-boton-primario:hover { background: var(--color-sello-2, #173f86); }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secundario",
+      "description": "Acción alternativa sobre papel o campo.",
+      "html": "<button class=\"ds-boton-sec\">Imprimir</button>",
+      "css": ".ds-boton-sec { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 3px; font: 600 14px 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; background: var(--color-papel, #f7f7f3); color: var(--color-tinta, #1c1c22); border: 1px solid rgb(143 143 136 / 0.7); cursor: pointer; transition: background-color 150ms, border-color 150ms; } .ds-boton-sec:hover { background: #fff; border-color: var(--color-tinta-3, #66666f); } .ds-boton-sec:active { transform: translateY(1px); } .ds-boton-sec:focus-visible { outline: 2px solid var(--color-sello, #1f4fa3); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón emitir",
+      "kind": "button",
+      "refersTo": "button-emitir",
+      "description": "Tinta negra para acciones que dejan constancia, como el cierre Z.",
+      "html": "<button class=\"ds-boton-emitir\">Emitir Reporte Z</button>",
+      "css": ".ds-boton-emitir { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 3px; font: 600 14px 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; background: var(--color-tinta, #1c1c22); color: var(--color-papel, #f7f7f3); border: 0; box-shadow: 0 1px 0 rgb(0 0 0 / 0.4); cursor: pointer; transition: background-color 150ms; } .ds-boton-emitir:hover { background: #000; } .ds-boton-emitir:active { transform: translateY(1px); } .ds-boton-emitir:focus-visible { outline: 2px solid var(--color-sello, #1f4fa3); outline-offset: 2px; }"
+    },
+    {
+      "name": "Entrada",
+      "kind": "input",
+      "refersTo": "control",
+      "description": "Control editable blanco con foco de sello.",
+      "html": "<label class=\"ds-campo\"><span>Descripción <b>*</b></span><input class=\"ds-entrada\" placeholder=\"Pasajes de mensajería\"></label>",
+      "css": ".ds-campo { display: block; font-family: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; } .ds-campo span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--color-tinta-2, #4a4a53); } .ds-campo b { color: var(--color-rojo, #bf2a2a); } .ds-entrada { height: 40px; width: 100%; padding: 0 12px; border-radius: 3px; border: 1px solid var(--color-borde-control, #8f8f88); background: #fff; color: var(--color-tinta, #1c1c22); font-size: 14px; box-shadow: inset 0 1px 0 rgb(28 28 34 / 0.05); transition: border-color 150ms, box-shadow 150ms; } .ds-entrada:hover { border-color: var(--color-tinta-2, #4a4a53); } .ds-entrada:focus { outline: none; border-color: var(--color-sello, #1f4fa3); box-shadow: 0 0 0 2px rgb(31 79 163 / 0.25); }"
+    },
+    {
+      "name": "Navegación sobre el campo",
+      "kind": "nav",
+      "refersTo": "nav-activo",
+      "description": "Barra lateral azul con pestaña de papel activa.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-activo\" href=\"#\">Dashboard</a><a href=\"#\">Movimientos</a><a href=\"#\">Caja de fondo</a><a href=\"#\">Caja chica</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 208px; padding: 16px; background: var(--color-campo, #16316b); font-family: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; } .ds-nav a { padding: 8px 12px; border-radius: 3px; font-size: 14.5px; font-weight: 500; color: var(--color-campo-tinta, #c7d4ee); text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-nav a:hover { background: var(--color-campo-2, #1f3f82); color: #fff; } .ds-nav a:focus-visible { outline: 2px solid var(--color-sello, #1f4fa3); outline-offset: 2px; } .ds-nav a.ds-nav-activo { background: var(--color-papel, #f7f7f3); color: var(--color-tinta, #1c1c22); box-shadow: 0 1px 0 rgb(0 0 0 / 0.3); }"
+    },
+    {
+      "name": "Sellos de estado",
+      "kind": "chip",
+      "refersTo": "sello-peligro",
+      "description": "Estados con nombre en rectángulos de tinta.",
+      "html": "<span class=\"ds-sello ds-sello-exito\">Óptimo</span> <span class=\"ds-sello ds-sello-alerta\">Alerta</span> <span class=\"ds-sello ds-sello-peligro\">Excede máximo</span> <span class=\"ds-sello ds-sello-info\">Abierta</span>",
+      "css": ".ds-sello { display: inline-flex; align-items: center; padding: 3px 6px; border: 1.5px solid; border-radius: 2px; font: 600 10.5px/1 'Martian Mono Variable', ui-monospace, monospace; font-stretch: 75%; letter-spacing: 0.02em; text-transform: uppercase; } .ds-sello-exito { border-color: var(--color-sello, #1f4fa3); color: var(--color-sello, #1f4fa3); } .ds-sello-alerta { border-style: dashed; border-color: var(--color-rojo, #bf2a2a); color: var(--color-rojo, #bf2a2a); } .ds-sello-peligro { border-color: var(--color-rojo, #bf2a2a); background: var(--color-rojo, #bf2a2a); color: #fff; } .ds-sello-info { border-color: rgb(31 79 163 / 0.5); background: var(--color-sello-claro, #e3eaf6); color: var(--color-sello-2, #173f86); }"
+    },
+    {
+      "name": "Cinta de caja",
+      "kind": "card",
+      "refersTo": "cinta",
+      "description": "Papel térmico dentado con renglones de puntos guía y total a doble ancho.",
+      "html": "<div class=\"ds-cinta-sombra\"><section class=\"ds-cinta\"><h2>Caja de fondo</h2><p class=\"ds-sub\">Saldo al 14/09/2026</p><hr><div class=\"ds-monto\"><small>S/</small>500.00</div><dl><div class=\"ds-renglon\"><dt>Disponible en fondo</dt><dd>S/ 500.00</dd></div><div class=\"ds-renglon\"><dt>Retiros</dt><dd class=\"ds-rojo\">−S/ 500.00</dd></div></dl></section></div>",
+      "css": ".ds-cinta-sombra { width: 320px; filter: drop-shadow(0 1px 0 rgb(8 20 50 / 0.3)) drop-shadow(0 12px 12px rgb(4 12 34 / 0.32)); } .ds-cinta { background: var(--color-papel, #f7f7f3); color: var(--color-tinta, #1c1c22); padding: 16px 20px 22px; font-family: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; } .ds-cinta h2 { margin: 0; text-align: center; font-size: 13px; font-weight: 650; font-stretch: 80%; letter-spacing: 0.07em; text-transform: uppercase; } .ds-sub { margin: 2px 0 0; text-align: center; font-size: 12.5px; color: var(--color-tinta-3, #66666f); } .ds-cinta hr { border: 0; border-top: 1px dashed rgb(102 102 111 / 0.45); margin: 12px 0; } .ds-monto { font: 600 30px/1.05 'Martian Mono Variable', ui-monospace, monospace; font-stretch: 112.5%; letter-spacing: -0.03em; font-variant-numeric: tabular-nums slashed-zero; margin: 16px 0; } .ds-monto small { font-size: 0.5em; font-weight: 500; letter-spacing: normal; margin-right: 0.18em; } .ds-cinta dl { margin: 0; } .ds-renglon { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; font-size: 14px; } .ds-renglon dt { flex: 1; display: flex; gap: 8px; color: var(--color-tinta-2, #4a4a53); } .ds-renglon dt::after { content: ''; flex: 1; min-width: 24px; border-bottom: 1px dotted rgb(102 102 111 / 0.6); transform: translateY(-4px); } .ds-renglon dd { margin: 0; font: 13.5px 'Martian Mono Variable', ui-monospace, monospace; font-stretch: 87.5%; font-variant-numeric: tabular-nums slashed-zero; } .ds-rojo { color: var(--color-rojo, #bf2a2a); }"
+    },
+    {
+      "name": "Hoja",
+      "kind": "card",
+      "refersTo": "hoja",
+      "description": "Panel de papel de 3px para tablas, arqueos y formularios.",
+      "html": "<section class=\"ds-hoja\"><header><h2>Movimientos del día (1)</h2></header><table><thead><tr><th>N.º</th><th>Tipo</th><th class=\"n\">Importe</th></tr></thead><tbody><tr><td class=\"c\">N.º 000210</td><td>Retiro de efectivo</td><td class=\"n r\">−S/ 500.00</td></tr></tbody></table></section>",
+      "css": ".ds-hoja { width: 420px; background: var(--color-papel, #f7f7f3); color: var(--color-tinta, #1c1c22); border-radius: 3px; box-shadow: 0 1px 0 rgb(8 20 50 / 0.35), 0 10px 24px -12px rgb(4 12 34 / 0.55); font-family: 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; } .ds-hoja header { padding: 14px 20px; border-bottom: 1px dashed var(--color-raya, #cdcdc4); } .ds-hoja h2 { margin: 0; font-size: 13px; font-weight: 650; font-stretch: 80%; letter-spacing: 0.07em; text-transform: uppercase; } .ds-hoja table { width: 100%; border-collapse: collapse; font-size: 14px; } .ds-hoja th { padding: 10px 12px; text-align: left; font-size: 11.5px; font-weight: 650; font-stretch: 80%; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-tinta-3, #66666f); border-bottom: 1px dashed var(--color-raya, #cdcdc4); } .ds-hoja td { padding: 10px 12px; } .ds-hoja tbody tr:hover { background: #fff; } .ds-hoja .n { text-align: right; } .ds-hoja .c, .ds-hoja td.n { font-family: 'Martian Mono Variable', ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums slashed-zero; } .ds-hoja .c { font-size: 12px; color: var(--color-tinta-3, #66666f); } .ds-hoja .r { color: var(--color-rojo, #bf2a2a); }"
+    },
+    {
+      "name": "Segmentado",
+      "kind": "custom",
+      "refersTo": "segmentado-activo",
+      "description": "Selector de período con segmento activo en tinta negra.",
+      "html": "<div class=\"ds-seg\" role=\"group\"><button>Diario</button><button>Semanal</button><button aria-pressed=\"true\">Mensual</button><button>Anual</button></div>",
+      "css": ".ds-seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--color-raya, #cdcdc4); border-radius: 3px; background: var(--color-papel-2, #efefe9); } .ds-seg button { padding: 6px 12px; border: 0; border-radius: 2px; background: transparent; font: 600 13.5px 'Archivo Variable', 'Segoe UI', system-ui, sans-serif; color: var(--color-tinta-2, #4a4a53); cursor: pointer; transition: background-color 150ms, color 150ms; } .ds-seg button:hover { background: var(--color-papel, #f7f7f3); color: var(--color-tinta, #1c1c22); } .ds-seg button:focus-visible { outline: 2px solid var(--color-sello, #1f4fa3); outline-offset: 2px; } .ds-seg button[aria-pressed=\"true\"] { background: var(--color-tinta, #1c1c22); color: var(--color-papel, #f7f7f3); box-shadow: 0 1px 0 rgb(0 0 0 / 0.3); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La cinta de caja",
+    "overview": "Cada jornada es una cinta impresa por una registradora con impresora bicolor y termina en su Reporte Z. El azul del logo institucional se extiende como mostrador (el campo) y sobre él se apoyan cintas de papel térmico con borde dentado y hojas de papel más formales. La tinta negra imprime cifras; la tinta roja de cinta marca salidas, negativos y descuadres; el azul de sello marca acciones, selección y estados.\n\nLa densidad es de oficina: renglones con puntos guía, rayas discontinuas en lugar de líneas sólidas, cifras monoespaciadas tabulares y totales a doble ancho como en el visor de la registradora. La interfaz se lee de pie en ventanilla y durante jornadas largas; nada es decorativo si no ayuda a leer dinero.\n\nSe rechaza el tablero SaaS de tarjetas blancas iguales con una fila de KPIs sobre fondo gris.",
+    "keyCharacteristics": [
+      "Campo azul único detrás de toda la app, incluidas barra lateral y cabeceras.",
+      "Papel térmico (cintas dentadas) para saldos y reportes; hoja de papel (esquina de 3px) para tablas y formularios.",
+      "Tres tintas con significado fijo: negra, roja, azul de sello.",
+      "Cifras, correlativos, fechas y totales en Martian Mono; texto en Archivo con ancho variable.",
+      "Estados con nombre en sellos rectangulares, nunca solo por color."
+    ],
+    "rules": [
+      { "name": "The Tres Tintas Rule", "body": "Sobre papel solo se imprime en negro, rojo o azul de sello, y cada tinta conserva su significado: negro es dinero normal, rojo es salida o atención, azul es acción o estado correcto. No hay verde ni ámbar.", "section": "colors" },
+      { "name": "The Cero Sin Tinta Rule", "body": "Un monto cero no lleva signo ni tinta roja aunque la línea sea de salida.", "section": "colors" },
+      { "name": "The Un Solo Campo Rule", "body": "El azul del logo es el único fondo de color de la app; las superficies de trabajo son papel encima de él.", "section": "colors" },
+      { "name": "The Cifra Monoespaciada Rule", "body": "Todo número que se compara (monto, fecha, hora, N.º, cantidad) va en Martian Mono tabular; nunca en Archivo.", "section": "typography" },
+      { "name": "The Doble Ancho Rule", "body": "Solo el total o saldo que responde la pregunta de la cinta va a doble ancho; los renglones usan la cifra normal.", "section": "typography" },
+      { "name": "The Papel Sobre Mostrador Rule", "body": "Solo el papel proyecta sombra sobre el campo; nada proyecta sombra sobre el papel salvo el labio de 1px de un botón.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do apoyar toda superficie de trabajo en papel (papel) sobre el campo (campo).",
+      "Do usar cinta dentada para lo que responde «cuánto hay» y hoja de 3px para listar o editar.",
+      "Do imprimir montos en Martian Mono tabular y reservar el doble ancho para el saldo o total de cada cinta.",
+      "Do separar con rayas discontinuas y puntos guía en lugar de bordes sólidos.",
+      "Do acompañar cada estado con un sello de texto; el color refuerza, no informa solo.",
+      "Do reservar el botón de tinta negra para acciones que dejan constancia (cierre Z)."
+    ],
+    "donts": [
+      "Don't introducir verde, ámbar u otra tinta: lo correcto es azul de sello y lo que pide atención es rojo.",
+      "Don't construir el tablero SaaS de tarjetas blancas iguales con fila de KPIs.",
+      "Don't usar radios mayores de 3px ni píldoras.",
+      "Don't poner sombras dentro del papel ni box-shadow en elementos con borde dentado.",
+      "Don't pintar un monto cero en rojo ni con signo.",
+      "Don't usar las escalas heredadas slate, red, emerald o marca en código nuevo; usar los nombres del mundo."
+    ]
+  }
+}

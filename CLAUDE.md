@@ -1,6 +1,7 @@
 # Guía para trabajar en este repositorio
 
 - Todo en español: código (nombres de funciones, variables, comentarios), interfaz y documentación. Moneda S/ (PEN), fechas ISO `YYYY-MM-DD` interpretadas en hora local.
+- Regla vigente 14/09: caja chica inicia con S/ 6,032.90 y entrega por última vez S/ 500 al fondo (saldo neto S/ 5,532.90). Fondo diario arrastra saldo, suma efectivo y descuenta envíos a GERENCIA; la apertura es automática y no editable. Caja chica solo salidas desde el 15/09. El Excel temporal del 14/09 es la fuente vigente (125 operaciones hasta el 13/09). Conservar los datos previos al corte sin volver a descontarlos.
 - La aritmética de dinero vive en `src/dominio` y se hace en céntimos (`sumar`, `restar`, `multiplicar`, `redondear`). Nunca sumar montos con `+` fuera del dominio ni calcular saldos dentro de componentes.
 - `src/dominio/excel.test.ts` es la regresión contra el Excel original del área: si cambia una regla de negocio, actualizar la prueba con la justificación.
 - Tipos de movimiento: `INGRESO` (caja diaria, digital o efectivo), `EGRESO` (caja chica), `REPOSICION_CAJA_CHICA` (origen BANCO o CAJA_DIARIA) y `RETIRO` (sale de la caja indicada en `caja_retiro`; no es gasto).

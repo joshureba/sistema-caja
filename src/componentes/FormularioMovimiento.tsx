@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clsx } from 'clsx';
-import { useEffect, useMemo } from 'react';
+import { ArrowDownLeft, ArrowUpRight, Banknote, RefreshCw } from 'lucide-react';
+import { useEffect, useId, useMemo, type ComponentProps } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '@/auth/AuthProvider';
@@ -8,6 +9,9 @@ import { useCatalogos, useGuardarMovimiento, useJornada, useParametros } from '@
 import {
   DESTINOS_RETIRO,
   ESTADOS_SUSTENTO,
+  esSalidaDelFondo,
+  FECHA_FONDO_SOLO_INGRESOS,
+  FECHA_CAJA_CHICA_SOLO_EGRESOS,
   ETIQUETA_CAJA,
   ETIQUETA_DESTINO,
   ETIQUETA_ORIGEN,
@@ -25,12 +29,14 @@ import {
   type Turno,
 } from '@/dominio';
 import { mensajeError } from '@/lib/supabase';
-import type { MovimientoInsertar } from '@/lib/tipos-bd';
-import { Alerta, AreaTexto, Boton, Campo, Entrada, Modal, Selector } from './ui';
+import type { MovimientoInsertar, TipoCatalogo } from '@/lib/tipos-bd';
+import { Alerta, AreaTexto, Boton, Campo, Casilla, Entrada, Modal, Selector, Tecla } from './ui';
 
 const cadena = z.string().trim().max(200).optional();
 
-const esquema = z
+const RESPONSABLE_OTROS = 'OTROS';
+
+const esquemaBase = z
   .object({
     fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresa una fecha válida'),
     turno: z.enum(TURNOS),
@@ -54,8 +60,21 @@ const esquema = z
     origen: z.enum(ORIGENES_REPOSICION).or(z.literal('')),
     caja_retiro: z.enum(['DIARIA', 'CHICA']).or(z.literal('')),
     destino: z.enum(DESTINOS_RETIRO).or(z.literal('')),
-  })
-  .superRefine((v, ctx) => {
+    responsable: z.string(),
+    responsable_otro: cadena,
+  });
+
+/** El responsable es obligatorio al registrar; al editar un movimiento importado puede quedar vacío. */
+function crearEsquema(requiereResponsable: boolean) {
+  return esquemaBase.superRefine((v, ctx) => {
+    if (requiereResponsable && !v.responsable) ctx.addIssue({ code: 'custom', path: ['responsable'], message: 'Elige quién hace el movimiento' });
+    if (v.responsable === RESPONSABLE_OTROS && !v.responsable_otro?.trim()) ctx.addIssue({ code: 'custom', path: ['responsable_otro'], message: 'Escribe el nombre del responsable' });
+    if (v.fecha >= FECHA_CAJA_CHICA_SOLO_EGRESOS && v.tipo === 'REPOSICION_CAJA_CHICA') {
+      ctx.addIssue({ code: 'custom', path: ['origen'], message: 'Desde el 15/09 la caja chica solo admite salidas.' });
+    }
+    if (esSalidaDelFondo({ ...v, origen: v.origen || null, caja_retiro: v.caja_retiro || null, destino: v.destino || null })) {
+      ctx.addIssue({ code: 'custom', path: [v.tipo === 'RETIRO' ? 'destino' : 'origen'], message: 'La caja de fondo solo permite salidas hacia gerencia.' });
+    }
     const monto = leerMonto(v.monto ?? '');
     if (v.tipo === 'INGRESO') {
       if (!v.medio_pago) ctx.addIssue({ code: 'custom', path: ['medio_pago'], message: 'Elige el medio de pago' });
@@ -74,8 +93,9 @@ const esquema = z
       if (!v.destino) ctx.addIssue({ code: 'custom', path: ['destino'], message: 'Indica el destino' });
     }
   });
+}
 
-type Valores = z.infer<typeof esquema>;
+type Valores = z.infer<typeof esquemaBase>;
 
 const ESTADO_POR_DEFECTO: Record<TipoMovimiento, Valores['estado_sustento']> = {
   INGRESO: 'CON COMPROBANTE',
@@ -84,9 +104,10 @@ const ESTADO_POR_DEFECTO: Record<TipoMovimiento, Valores['estado_sustento']> = {
   RETIRO: '',
 };
 
-function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno, preset: Partial<Valores>): Valores {
+function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno, preset: Partial<Valores>, responsables: string[]): Valores {
   if (movimiento) {
     const m = movimiento;
+    const conocido = Boolean(m.responsable && responsables.includes(m.responsable));
     return {
       fecha: m.fecha,
       turno: m.turno,
@@ -110,6 +131,8 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
       origen: m.origen ?? '',
       caja_retiro: m.caja_retiro ?? '',
       destino: m.destino ?? '',
+      responsable: !m.responsable ? '' : conocido ? m.responsable : RESPONSABLE_OTROS,
+      responsable_otro: m.responsable && !conocido ? m.responsable : '',
     };
   }
   const tipo = preset.tipo ?? 'INGRESO';
@@ -136,6 +159,8 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
     origen: 'BANCO',
     caja_retiro: 'CHICA',
     destino: 'BANCO',
+    responsable: '',
+    responsable_otro: '',
     ...preset,
   };
 }
@@ -163,6 +188,7 @@ export function aInsertar(v: Valores, jornadaId: number | null): MovimientoInser
     cuenta: limpiar(v.cuenta),
     num_operacion: limpiar(v.num_operacion),
     observacion: limpiar(v.observacion),
+    responsable: v.responsable === RESPONSABLE_OTROS ? (limpiar(v.responsable_otro)?.toUpperCase() ?? null) : limpiar(v.responsable),
     monto: 0,
     monto_digital: 0,
     monto_efectivo: 0,
@@ -205,7 +231,10 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   const catalogos = useCatalogos();
   const guardar = useGuardarMovimiento();
   const turnoAuto = turnoParaHora(horaHHmm(), parametros.data?.hora_inicio_noche ?? '17:00');
-  const iniciales = useMemo(() => valoresPorDefecto(movimiento, turnoAuto, preset ?? {}), [movimiento, turnoAuto, preset]);
+  const idFormulario = useId();
+  const responsables = useMemo(() => (catalogos.data?.RESPONSABLE ?? []).map((c) => c.valor), [catalogos.data]);
+  const iniciales = useMemo(() => valoresPorDefecto(movimiento, turnoAuto, preset ?? {}, responsables), [movimiento, turnoAuto, preset, responsables]);
+  const resolver = useMemo(() => zodResolver(crearEsquema(!movimiento)), [movimiento]);
 
   const {
     register,
@@ -214,7 +243,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
     setValue,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Valores>({ resolver: zodResolver(esquema), defaultValues: iniciales });
+  } = useForm<Valores>({ resolver, defaultValues: iniciales, mode: 'onTouched' });
 
   useEffect(() => {
     if (abierto) {
@@ -226,13 +255,18 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
 
   const tipo = watch('tipo');
   const fecha = watch('fecha');
+  const cajaRetiro = watch('caja_retiro');
+  useEffect(() => {
+    if (tipo === 'RETIRO' && cajaRetiro === 'DIARIA' && fecha >= FECHA_FONDO_SOLO_INGRESOS) setValue('destino', 'GERENCIA');
+  }, [tipo, cajaRetiro, fecha, setValue]);
   const medioPago = watch('medio_pago');
   const mixto = watch('mixto');
+  const responsable = watch('responsable');
   const jornada = useJornada(fecha);
   const jornadaCerrada = jornada.data?.estado === 'CERRADA';
   const bloqueado = jornadaCerrada && !esSupervisor;
 
-  const opciones = (tipoCatalogo: 'AREA' | 'MEDIO_PAGO' | 'CUENTA' | 'COMPROBANTE', actual?: string) => {
+  const opciones = (tipoCatalogo: TipoCatalogo, actual?: string) => {
     const lista = catalogos.data?.[tipoCatalogo].filter((c) => c.activo || c.valor === actual) ?? [];
     return lista.map((c) => (
       <option key={c.id} value={c.valor}>
@@ -265,23 +299,61 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   const conSustento = esIngreso || esEgreso;
 
   return (
-    <Modal abierto={abierto} onCerrar={onCerrar} titulo={movimiento ? `Editar movimiento #${movimiento.id}` : 'Nuevo movimiento'} ancho="lg">
-      <form onSubmit={handleSubmit(enviar)} className="space-y-5" noValidate>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de movimiento">
-          {TIPOS_MOVIMIENTO.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => cambiarTipo(t)}
-              aria-pressed={t === tipo}
-              className={clsx(
-                'rounded-lg border px-3 py-2 text-sm font-semibold transition',
-                t === tipo ? 'border-marca-800 bg-marca-800 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-              )}
-            >
-              {ETIQUETA_TIPO[t]}
-            </button>
-          ))}
+    <Modal
+      abierto={abierto}
+      onCerrar={onCerrar}
+      titulo={movimiento ? `Editar movimiento N.º ${String(movimiento.id).padStart(6, '0')}` : 'Registrar movimiento'}
+      ancho="lg"
+      pie={
+        <>
+          <p className="mr-auto hidden self-center text-[12.5px] text-tinta-3 sm:block">
+            <Tecla>Enter</Tecla> registra · <Tecla>Esc</Tecla> cancela
+          </p>
+          <Boton variante="secundario" onClick={onCerrar}>
+            Cancelar
+          </Boton>
+          <Boton type="submit" form={idFormulario} cargando={isSubmitting || guardar.isPending} disabled={bloqueado}>
+            {movimiento ? 'Guardar cambios' : 'Registrar movimiento'}
+          </Boton>
+        </>
+      }
+    >
+      <form id={idFormulario} onSubmit={handleSubmit(enviar)} className="space-y-5" noValidate>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tipo de movimiento">
+            {TIPOS_MOVIMIENTO.filter((t) => t !== 'REPOSICION_CAJA_CHICA' || fecha < FECHA_CAJA_CHICA_SOLO_EGRESOS || tipo === t).map((t) => {
+              const { Icono, activo } = ESTILO_TIPO[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => cambiarTipo(t)}
+                  aria-pressed={t === tipo}
+                  className={clsx(
+                    'inline-flex h-10 cursor-pointer items-center gap-2 rounded-[3px] border px-3.5 text-[14px] font-semibold transition-colors duration-150',
+                    t === tipo ? activo : 'border-borde-control/60 bg-white text-tinta-2 hover:border-tinta-3 hover:text-tinta',
+                  )}
+                >
+                  <Icono className="size-4" aria-hidden />
+                  {ETIQUETA_TIPO[t]}
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Campo etiqueta="Fecha" requerido error={errors.fecha?.message}>
+              <Entrada type="date" {...register('fecha')} aria-invalid={Boolean(errors.fecha)} className="cifra w-40 text-[13px]" />
+            </Campo>
+            <Campo etiqueta="Turno" requerido>
+              <Selector {...register('turno')} className="w-28">
+                {TURNOS.map((t) => (
+                  <option key={t} value={t}>
+                    {t === 'MAÑANA' ? 'Mañana' : 'Noche'}
+                  </option>
+                ))}
+              </Selector>
+            </Campo>
+          </div>
         </div>
 
         {bloqueado && (
@@ -293,18 +365,9 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
           <Alerta tono="info">La jornada del {formatearFecha(fecha)} está cerrada; el cambio quedará registrado en la auditoría.</Alerta>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Campo etiqueta="Fecha" requerido error={errors.fecha?.message}>
-            <Entrada type="date" {...register('fecha')} aria-invalid={Boolean(errors.fecha)} />
-          </Campo>
-          <Campo etiqueta="Turno" requerido>
-            <Selector {...register('turno')}>
-              {TURNOS.map((t) => (
-                <option key={t} value={t}>
-                  {t === 'MAÑANA' ? 'Mañana' : 'Noche'}
-                </option>
-              ))}
-            </Selector>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Campo etiqueta="Descripción" requerido error={errors.descripcion?.message} className="sm:col-span-2">
+            <Entrada {...register('descripcion')} data-autofoco placeholder={esIngreso ? 'Ej. Pago de matrícula del diplomado…' : 'Ej. Movilidad para trámite…'} aria-invalid={Boolean(errors.descripcion)} />
           </Campo>
           <Campo etiqueta="Área" ayuda={esIngreso ? 'Qué se cobró' : 'Qué área originó el gasto'}>
             <Selector {...register('area')}>
@@ -312,14 +375,25 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
               {opciones('AREA', movimiento?.area ?? undefined)}
             </Selector>
           </Campo>
+          <div className="space-y-2">
+            <Campo etiqueta="Responsable" requerido={!movimiento} error={errors.responsable?.message}>
+              <Selector {...register('responsable')} aria-invalid={Boolean(errors.responsable)}>
+                <option value="">{movimiento ? 'Sin responsable' : 'Elige…'}</option>
+                {opciones('RESPONSABLE', movimiento?.responsable ?? undefined)}
+                <option value={RESPONSABLE_OTROS}>Otros</option>
+              </Selector>
+            </Campo>
+            {responsable === RESPONSABLE_OTROS && (
+              <Campo etiqueta={<span className="sr-only">Nombre del responsable</span>} error={errors.responsable_otro?.message}>
+                <Entrada {...register('responsable_otro')} placeholder="Nombre del responsable" autoComplete="off" aria-invalid={Boolean(errors.responsable_otro)} autoFocus />
+              </Campo>
+            )}
+          </div>
         </div>
 
-        <Campo etiqueta="Descripción" requerido error={errors.descripcion?.message}>
-          <Entrada {...register('descripcion')} placeholder={esIngreso ? 'Ej. Pago de matrícula del diplomado…' : 'Ej. Movilidad para trámite…'} aria-invalid={Boolean(errors.descripcion)} />
-        </Campo>
-
-        {/* Montos */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        {/* Montos: el renglón de la cinta */}
+        <fieldset className="rounded-[3px] border-[1.5px] border-dashed border-tinta-3/40 bg-papel-2 px-4 pt-3 pb-4">
+          <legend className="rotulo px-1.5 text-[12px] text-tinta-2">{esIngreso ? 'Cobro' : esEgreso ? 'Salida de caja chica' : tipo === 'REPOSICION_CAJA_CHICA' ? 'Entrada a caja chica' : 'Retiro'}</legend>
           <div className="grid gap-4 sm:grid-cols-3">
             {esIngreso && (
               <Campo etiqueta="Medio de pago" requerido error={errors.medio_pago?.message}>
@@ -332,10 +406,10 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
             {esIngreso && mixto ? (
               <>
                 <Campo etiqueta="Monto digital" requerido error={errors.monto_digital?.message}>
-                  <Entrada inputMode="decimal" placeholder="0.00" {...register('monto_digital')} aria-invalid={Boolean(errors.monto_digital)} />
+                  <EntradaMonto {...register('monto_digital')} aria-invalid={Boolean(errors.monto_digital)} />
                 </Campo>
                 <Campo etiqueta="Monto en efectivo" requerido error={errors.monto_efectivo?.message}>
-                  <Entrada inputMode="decimal" placeholder="0.00" {...register('monto_efectivo')} aria-invalid={Boolean(errors.monto_efectivo)} />
+                  <EntradaMonto {...register('monto_efectivo')} aria-invalid={Boolean(errors.monto_efectivo)} />
                 </Campo>
               </>
             ) : (
@@ -345,15 +419,10 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                 error={errors.monto?.message}
                 ayuda={esEgreso ? 'Sale de la caja chica' : tipo === 'REPOSICION_CAJA_CHICA' ? 'Entra a la caja chica' : tipo === 'RETIRO' ? 'No cuenta como gasto' : undefined}
               >
-                <Entrada inputMode="decimal" placeholder="0.00" {...register('monto')} aria-invalid={Boolean(errors.monto)} />
+                <EntradaMonto {...register('monto')} aria-invalid={Boolean(errors.monto)} salida={!esIngreso && tipo !== 'REPOSICION_CAJA_CHICA'} />
               </Campo>
             )}
-            {esIngreso && (
-              <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
-                <input type="checkbox" className="size-4 rounded border-slate-300" {...register('mixto')} />
-                Pago mixto (efectivo + digital)
-              </label>
-            )}
+            {esIngreso && <Casilla etiqueta="Pago mixto (efectivo + digital)" {...register('mixto')} className="self-end pb-2.5" />}
             {tipo === 'REPOSICION_CAJA_CHICA' && (
               <Campo etiqueta="Origen del dinero" requerido error={errors.origen?.message}>
                 <Selector {...register('origen')}>
@@ -376,7 +445,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                 </Campo>
                 <Campo etiqueta="Destino" requerido error={errors.destino?.message}>
                   <Selector {...register('destino')}>
-                    {DESTINOS_RETIRO.map((d) => (
+                    {DESTINOS_RETIRO.filter((d) => cajaRetiro !== 'DIARIA' || fecha < FECHA_FONDO_SOLO_INGRESOS || d === 'GERENCIA').map((d) => (
                       <option key={d} value={d}>
                         {ETIQUETA_DESTINO[d]}
                       </option>
@@ -387,7 +456,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
             )}
             {(esIngreso || tipo === 'REPOSICION_CAJA_CHICA') && (
               <Campo etiqueta="N.º de operación" ayuda="Para pagos digitales o transferencias">
-                <Entrada {...register('num_operacion')} />
+                <Entrada {...register('num_operacion')} className="cifra text-[13px]" />
               </Campo>
             )}
             {esIngreso && (
@@ -399,10 +468,10 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
               </Campo>
             )}
           </div>
-        </div>
+        </fieldset>
 
         {conSustento && (
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
             <Campo etiqueta="Sustento" requerido>
               <Selector {...register('estado_sustento')}>
                 {ESTADOS_SUSTENTO.map((e) => (
@@ -419,10 +488,10 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
               </Selector>
             </Campo>
             <Campo etiqueta="Serie">
-              <Entrada {...register('serie')} placeholder="EB01" />
+              <Entrada {...register('serie')} placeholder="EB01" className="cifra text-[13px] uppercase" />
             </Campo>
             <Campo etiqueta="Número">
-              <Entrada {...register('numero')} placeholder="00078919" />
+              <Entrada {...register('numero')} placeholder="00078919" className="cifra text-[13px]" />
             </Campo>
           </div>
         )}
@@ -430,7 +499,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
         {tipo !== 'REPOSICION_CAJA_CHICA' && (
           <div className="grid gap-4 sm:grid-cols-3">
             <Campo etiqueta={esIngreso ? 'RUC / DNI del cliente' : 'DNI de quien recibe'}>
-              <Entrada {...register('ruc_dni')} inputMode="numeric" />
+              <Entrada {...register('ruc_dni')} inputMode="numeric" className="cifra text-[13px]" />
             </Campo>
             <Campo etiqueta={esIngreso ? 'Nombre / razón social' : 'Nombre de quien recibe'} className="sm:col-span-2">
               <Entrada {...register('nombre')} />
@@ -443,16 +512,25 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
         </Campo>
 
         {guardar.error ? <Alerta tono="peligro">{mensajeError(guardar.error)}</Alerta> : null}
-
-        <div className="flex flex-wrap justify-end gap-2">
-          <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
-          </Boton>
-          <Boton type="submit" cargando={isSubmitting || guardar.isPending} disabled={bloqueado}>
-            {movimiento ? 'Guardar cambios' : 'Registrar movimiento'}
-          </Boton>
-        </div>
       </form>
     </Modal>
+  );
+}
+
+const ESTILO_TIPO: Record<TipoMovimiento, { Icono: typeof ArrowDownLeft; activo: string }> = {
+  INGRESO: { Icono: ArrowDownLeft, activo: 'border-sello bg-sello text-white' },
+  EGRESO: { Icono: ArrowUpRight, activo: 'border-rojo bg-rojo text-white' },
+  REPOSICION_CAJA_CHICA: { Icono: RefreshCw, activo: 'border-sello-2 bg-sello-2 text-white' },
+  RETIRO: { Icono: Banknote, activo: 'border-tinta bg-tinta text-papel' },
+};
+
+function EntradaMonto({ salida, className, ...resto }: ComponentProps<'input'> & { salida?: boolean }) {
+  return (
+    <div className="relative">
+      <span className={clsx('cifra pointer-events-none absolute inset-y-0 left-3 flex items-center text-[12px]', salida ? 'text-rojo' : 'text-tinta-3')} aria-hidden>
+        S/
+      </span>
+      <Entrada inputMode="decimal" placeholder="0.00" autoComplete="off" className={clsx('cifra h-11 pl-9 text-right text-[17px] font-semibold', salida && 'text-rojo', className)} {...resto} />
+    </div>
   );
 }

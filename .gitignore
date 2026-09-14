@@ -11,3 +11,12 @@ supabase/.branches
 
 .vercel
 .env*
+
+# Impeccable: capturas de revisión (contienen datos reales de alumnos) y archivos temporales
+.impeccable/review/
+.impeccable/questions/
+.impeccable/hook.cache.json
+# Binario del motor de Impeccable: se descarga solo en la primera ejecución
+.claude/skills/impeccable/scripts/bin/
+# Configuración local de Claude Code
+.claude/settings.local.json

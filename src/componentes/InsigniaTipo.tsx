@@ -1,9 +1,10 @@
 import { ETIQUETA_TIPO, type EstadoSustento, type TipoMovimiento } from '@/dominio';
 import { Insignia, type Tono } from './ui';
 
+// Tinta bicolor: lo que sale de una caja va en rojo; lo que entra, en azul de sello.
 const TONO_TIPO: Record<TipoMovimiento, Tono> = {
   INGRESO: 'exito',
-  EGRESO: 'alerta',
+  EGRESO: 'salida',
   REPOSICION_CAJA_CHICA: 'info',
   RETIRO: 'neutro',
 };
@@ -19,6 +20,6 @@ const TONO_SUSTENTO: Record<EstadoSustento, Tono> = {
 };
 
 export function InsigniaSustento({ estado }: { estado: EstadoSustento | null }) {
-  if (!estado) return <span className="text-slate-300">—</span>;
+  if (!estado) return <span className="text-tinta-3">—</span>;
   return <Insignia tono={TONO_SUSTENTO[estado]}>{estado === 'CON COMPROBANTE' ? 'Con comp.' : estado === 'SIN COMPROBANTE' ? 'Sin comp.' : 'Pendiente'}</Insignia>;
 }
