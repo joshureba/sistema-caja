@@ -12,6 +12,12 @@ export const ETIQUETA_TIPO: Record<TipoMovimiento, string> = {
   RETIRO: 'Retiro de efectivo',
 };
 
+/** Etiquetas del formulario: el retiro solo sale de la caja de fondo, y así se nombra al registrarlo. */
+export const ETIQUETA_TIPO_FORMULARIO: Record<TipoMovimiento, string> = {
+  ...ETIQUETA_TIPO,
+  RETIRO: 'Retiro de efectivo caja de fondo',
+};
+
 export type TipoCaja = 'DIARIA' | 'CHICA';
 export const ETIQUETA_CAJA: Record<TipoCaja, string> = { DIARIA: 'Caja de fondo (diaria)', CHICA: 'Caja chica' };
 
@@ -28,6 +34,11 @@ export const ETIQUETA_ORIGEN: Record<OrigenReposicion, string> = { BANCO: 'Banco
 export const DESTINOS_RETIRO = ['BANCO', 'OTRO', 'GERENCIA'] as const;
 export type DestinoRetiro = (typeof DESTINOS_RETIRO)[number];
 export const ETIQUETA_DESTINO: Record<DestinoRetiro, string> = { BANCO: 'Banco', OTRO: 'Otro', GERENCIA: 'Gerencia' };
+/** Destinos admitidos para el efectivo que sale de la caja de fondo. */
+export const DESTINOS_FONDO = ['GERENCIA', 'BANCO'] as const;
+export function esDestinoDeFondo(destino: string | null | undefined): boolean {
+  return DESTINOS_FONDO.some((d) => d === destino);
+}
 
 export const PERIODOS = ['DIARIO', 'SEMANAL', 'QUINCENAL', 'MENSUAL', 'SEMESTRAL', 'ANUAL'] as const;
 export type TipoPeriodo = (typeof PERIODOS)[number];

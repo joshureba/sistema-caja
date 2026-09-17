@@ -1,4 +1,4 @@
-import type { Movimiento } from './tipos';
+import { esDestinoDeFondo, type Movimiento } from './tipos';
 import { redondear, sumar } from './dinero';
 import type { FechaISO } from './fechas';
 
@@ -15,7 +15,7 @@ export function esRetiroDeCajaChica(m: Pick<Movimiento, 'fecha' | 'tipo' | 'caja
 
 export function esSalidaDelFondo(m: Pick<Movimiento, 'fecha' | 'tipo' | 'origen' | 'caja_retiro' | 'destino'>): boolean {
   return m.fecha >= FECHA_FONDO_SOLO_INGRESOS && (
-    (m.tipo === 'RETIRO' && m.caja_retiro === 'DIARIA' && m.destino !== 'GERENCIA') ||
+    (m.tipo === 'RETIRO' && m.caja_retiro === 'DIARIA' && !esDestinoDeFondo(m.destino)) ||
     (m.tipo === 'REPOSICION_CAJA_CHICA' && m.origen === 'CAJA_DIARIA')
   );
 }

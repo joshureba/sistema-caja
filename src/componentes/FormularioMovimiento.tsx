@@ -8,6 +8,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useCatalogos, useGuardarMovimiento, useJornada, useParametros } from '@/datos/consultas';
 import {
   DESTINOS_RETIRO,
+  esDestinoDeFondo,
   ESTADOS_SUSTENTO,
   esSalidaDelFondo,
   FECHA_FONDO_SOLO_INGRESOS,
@@ -16,7 +17,7 @@ import {
   ETIQUETA_CAJA,
   ETIQUETA_DESTINO,
   ETIQUETA_ORIGEN,
-  ETIQUETA_TIPO,
+  ETIQUETA_TIPO_FORMULARIO,
   ORIGENES_REPOSICION,
   TIPOS_MOVIMIENTO,
   TURNOS,
@@ -77,7 +78,7 @@ function crearEsquema(requiereResponsable: boolean) {
       ctx.addIssue({ code: 'custom', path: ['caja_retiro'], message: 'Los retiros solo salen de la caja de fondo. Un gasto de caja chica se registra como egreso.' });
     }
     if (esSalidaDelFondo({ ...v, origen: v.origen || null, caja_retiro: v.caja_retiro || null, destino: v.destino || null })) {
-      ctx.addIssue({ code: 'custom', path: [v.tipo === 'RETIRO' ? 'destino' : 'origen'], message: 'La caja de fondo solo permite salidas hacia gerencia.' });
+      ctx.addIssue({ code: 'custom', path: [v.tipo === 'RETIRO' ? 'destino' : 'origen'], message: 'La caja de fondo solo permite salidas hacia gerencia o al banco.' });
     }
     const monto = leerMonto(v.monto ?? '');
     if (v.tipo === 'INGRESO') {
@@ -261,9 +262,13 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   const tipo = watch('tipo');
   const fecha = watch('fecha');
   const cajaRetiro = watch('caja_retiro');
+  const destino = watch('destino');
   useEffect(() => {
-    if (tipo === 'RETIRO' && cajaRetiro === 'DIARIA' && fecha >= FECHA_FONDO_SOLO_INGRESOS) setValue('destino', 'GERENCIA');
-  }, [tipo, cajaRetiro, fecha, setValue]);
+    // El fondo solo sale hacia gerencia o al banco; si quedó otro destino, vuelve al primero.
+    if (tipo === 'RETIRO' && cajaRetiro === 'DIARIA' && fecha >= FECHA_FONDO_SOLO_INGRESOS && !esDestinoDeFondo(destino)) {
+      setValue('destino', 'GERENCIA');
+    }
+  }, [tipo, cajaRetiro, destino, fecha, setValue]);
   const medioPago = watch('medio_pago');
   const mixto = watch('mixto');
   const responsable = watch('responsable');
@@ -349,7 +354,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                   )}
                 >
                   <Icono className="size-4" aria-hidden />
-                  {ETIQUETA_TIPO[t]}
+                  {ETIQUETA_TIPO_FORMULARIO[t]}
                 </button>
               );
             })}
@@ -460,7 +465,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                 </Campo>
                 <Campo etiqueta="Destino" requerido error={errors.destino?.message}>
                   <Selector {...register('destino')}>
-                    {DESTINOS_RETIRO.filter((d) => cajaRetiro !== 'DIARIA' || fecha < FECHA_FONDO_SOLO_INGRESOS || d === 'GERENCIA').map((d) => (
+                    {DESTINOS_RETIRO.filter((d) => cajaRetiro !== 'DIARIA' || fecha < FECHA_FONDO_SOLO_INGRESOS || esDestinoDeFondo(d)).map((d) => (
                       <option key={d} value={d}>
                         {ETIQUETA_DESTINO[d]}
                       </option>

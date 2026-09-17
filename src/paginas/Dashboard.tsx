@@ -112,13 +112,13 @@ export default function Dashboard() {
             </div>
             <dl className="mt-3">
               <LineaCinta etiqueta="Disponible en fondo" monto={saldoFondo} />
-              <LineaCinta etiqueta="Enviado a gerencia" monto={saldoFondo === null ? null : fondo.envios} signo="−" salida />
+              <LineaCinta etiqueta="Enviado a gerencia o banco" monto={saldoFondo === null ? null : fondo.envios} signo="−" salida />
               <RayaCinta className="my-2" />
               <LineaCinta etiqueta="Efectivo del período" monto={resumen.ingresos_efectivo} />
               <LineaCinta etiqueta="Cobros del período" valor={resumen.n_ingresos} />
             </dl>
             <p className="mt-3 text-[12.5px] leading-snug text-tinta-3">
-              {saldoFondo === null ? `El control empieza el ${formatearFecha(parametros.fecha_corte)}.` : 'Saldo anterior + efectivo − envíos a gerencia; continúa al día siguiente. Lo digital va aparte.'}
+              {saldoFondo === null ? `El control empieza el ${formatearFecha(parametros.fecha_corte)}.` : 'Saldo anterior + efectivo − envíos a gerencia o al banco; continúa al día siguiente. Lo digital va aparte.'}
             </p>
             <EnlaceCinta a="/jornada">Ir a caja de fondo</EnlaceCinta>
           </Cinta>

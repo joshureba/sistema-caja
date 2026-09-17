@@ -16,7 +16,7 @@ export function mensajeError(error: unknown): string {
   if (!error) return 'Error desconocido.';
   const e = error as { message?: string; details?: string };
   const texto = e.message ?? String(error);
-  if (/fondo_salidas_solo_gerencia/.test(texto)) return 'La caja de fondo solo permite salidas hacia gerencia.';
+  if (/fondo_salidas_(solo_gerencia|a_gerencia_o_banco)/.test(texto)) return 'La caja de fondo solo permite salidas hacia gerencia o al banco.';
   if (/chica_solo_salidas_desde_15_09/.test(texto)) return 'Desde el 15/09 la caja chica solo admite salidas; no admite reposiciones.';
   if (/Invalid login credentials/i.test(texto)) return 'Correo o contraseña incorrectos.';
   if (/Email not confirmed/i.test(texto)) return 'El correo aún no está confirmado.';

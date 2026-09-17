@@ -71,6 +71,9 @@ describe('Excel temporal del 14/09 y separación definitiva', () => {
     expect(esSalidaDelFondo(base)).toBe(false);
     expect(esSalidaDelFondo({ ...base, tipo: 'REPOSICION_CAJA_CHICA', origen: 'CAJA_DIARIA' })).toBe(true);
     expect(esSalidaDelFondo({ ...base, caja_retiro: 'DIARIA', destino: 'GERENCIA' })).toBe(false);
+    // Regla del 17/09: el fondo también puede enviar efectivo al banco.
+    expect(esSalidaDelFondo({ ...base, caja_retiro: 'DIARIA', destino: 'BANCO' })).toBe(false);
+    expect(esSalidaDelFondo({ ...base, caja_retiro: 'DIARIA', destino: 'OTRO' })).toBe(true);
   });
   // Regla del 17/09: los retiros solo salen del fondo desde el 16/09 (el retiro de excedente de caja chica
   // del 15/09 es real y se conserva) y la caja chica vuelve a reponerse desde el banco.
