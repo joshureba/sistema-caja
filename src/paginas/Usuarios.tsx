@@ -14,7 +14,7 @@ export default function Usuarios() {
       <div className="space-y-6">
         <Alerta tono="info" titulo="Cómo dar acceso a una persona nueva">
           Las cuentas se crean desde el panel de Supabase (Authentication → Users → Add user) con su correo y una contraseña temporal. Al crearla, el sistema le asigna el rol
-          de cajero automáticamente; aquí puedes cambiarlo a supervisor, corregir el nombre o desactivarla.
+          de cajero automáticamente; aquí puedes cambiarlo a supervisor o a «Solo lectura» (ve toda la caja pero no registra ni modifica nada), corregir el nombre o desactivarla.
         </Alerta>
         <Tarjeta sinRelleno>
           {perfiles.isPending ? (
@@ -74,6 +74,7 @@ function FilaPerfil({ perfil }: { perfil: PerfilBD }) {
       <td className={claseTd}>
         <Selector value={rol} onChange={(e) => setRol(e.target.value as RolUsuario)} disabled={esYo} className="w-36" aria-label={`Rol de ${perfil.nombre}`}>
           <option value="cajero">Cajero</option>
+          <option value="lector">Solo lectura</option>
           <option value="supervisor">Supervisor</option>
         </Selector>
       </td>

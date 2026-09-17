@@ -41,7 +41,7 @@ interface Filtros {
 }
 
 export default function Movimientos() {
-  const { esSupervisor, usuario } = useAuth();
+  const { esSupervisor, puedeOperar, usuario } = useAuth();
   const { movimientos, cargando, error } = useDatosCaja();
   const catalogos = useCatalogos();
   const hoy = hoyISO();
@@ -92,7 +92,7 @@ export default function Movimientos() {
     return t;
   }, [filtrados]);
 
-  const puedeEditar = (m: Movimiento) => !m.anulado && (esSupervisor || (estadoJornada.get(m.fecha) ?? 'ABIERTA') === 'ABIERTA');
+  const puedeEditar = (m: Movimiento) => puedeOperar && !m.anulado && (esSupervisor || (estadoJornada.get(m.fecha) ?? 'ABIERTA') === 'ABIERTA');
 
   function exportar() {
     exportarExcel(`movimientos_${filtros.desde}_${filtros.hasta}`, [
@@ -152,9 +152,11 @@ export default function Movimientos() {
             <Boton variante="secundario" icono={<Download className="size-4" aria-hidden />} onClick={exportar} disabled={!filtrados.length}>
               Exportar Excel
             </Boton>
-            <Boton icono={<Plus className="size-4" aria-hidden />} onClick={() => setNuevo(true)}>
-              Nuevo movimiento
-            </Boton>
+            {puedeOperar && (
+              <Boton icono={<Plus className="size-4" aria-hidden />} onClick={() => setNuevo(true)}>
+                Nuevo movimiento
+              </Boton>
+            )}
           </>
         }
       />
@@ -269,7 +271,7 @@ export default function Movimientos() {
         {cargando ? (
           <Cargando />
         ) : filtrados.length === 0 ? (
-          <Vacio titulo="Sin movimientos con esos filtros" descripcion="Cambia el rango de fechas o registra el primer movimiento del período." accion={<Boton onClick={() => setNuevo(true)}>Nuevo movimiento</Boton>} />
+          <Vacio titulo="Sin movimientos con esos filtros" descripcion="Cambia el rango de fechas o registra el primer movimiento del período." accion={puedeOperar ? <Boton onClick={() => setNuevo(true)}>Nuevo movimiento</Boton> : undefined} />
         ) : (
           <>
           <div className="hidden md:block">

@@ -524,7 +524,7 @@ export type Database = {
       estado_jornada: "ABIERTA" | "CERRADA"
       estado_sustento: "CON COMPROBANTE" | "SIN COMPROBANTE" | "PENDIENTE"
       origen_reposicion: "BANCO" | "CAJA_DIARIA"
-      rol_usuario: "cajero" | "supervisor"
+      rol_usuario: "cajero" | "supervisor" | "lector"
       tipo_caja: "DIARIA" | "CHICA"
       tipo_movimiento: "INGRESO" | "EGRESO" | "REPOSICION_CAJA_CHICA" | "RETIRO"
       turno_caja: "MAÑANA" | "NOCHE"
@@ -663,7 +663,7 @@ export const Constants = {
       estado_jornada: ["ABIERTA", "CERRADA"],
       estado_sustento: ["CON COMPROBANTE", "SIN COMPROBANTE", "PENDIENTE"],
       origen_reposicion: ["BANCO", "CAJA_DIARIA"],
-      rol_usuario: ["cajero", "supervisor"],
+      rol_usuario: ["cajero", "supervisor", "lector"],
       tipo_caja: ["DIARIA", "CHICA"],
       tipo_movimiento: ["INGRESO", "EGRESO", "REPOSICION_CAJA_CHICA", "RETIRO"],
       turno_caja: ["MAÑANA", "NOCHE"],

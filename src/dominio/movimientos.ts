@@ -3,7 +3,15 @@ import { redondear, sumar } from './dinero';
 import type { FechaISO } from './fechas';
 
 export const FECHA_FONDO_SOLO_INGRESOS = '2026-09-14';
-export const FECHA_CAJA_CHICA_SOLO_EGRESOS = '2026-09-15';
+/**
+ * Desde el 16/09 los retiros de efectivo solo salen de la caja de fondo: lo que sale de la caja chica
+ * es un egreso. La caja chica vuelve a admitir reposiciones desde el banco (regla del 17/09).
+ */
+export const FECHA_RETIROS_SOLO_FONDO = '2026-09-16';
+
+export function esRetiroDeCajaChica(m: Pick<Movimiento, 'fecha' | 'tipo' | 'caja_retiro'>): boolean {
+  return m.fecha >= FECHA_RETIROS_SOLO_FONDO && m.tipo === 'RETIRO' && m.caja_retiro === 'CHICA';
+}
 
 export function esSalidaDelFondo(m: Pick<Movimiento, 'fecha' | 'tipo' | 'origen' | 'caja_retiro' | 'destino'>): boolean {
   return m.fecha >= FECHA_FONDO_SOLO_INGRESOS && (

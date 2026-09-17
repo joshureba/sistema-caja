@@ -9,6 +9,10 @@ interface ContextoAuth {
   /** `true` mientras se resuelve la sesión inicial o se carga el perfil. */
   cargando: boolean;
   esSupervisor: boolean;
+  /** Cuenta de solo lectura: ve la caja pero no registra ni modifica nada. */
+  esLector: boolean;
+  /** Puede registrar y editar (cajero o supervisor activo). La autorización real está en RLS. */
+  puedeOperar: boolean;
   recargarPerfil: () => Promise<void>;
   cerrarSesion: () => Promise<void>;
 }
@@ -67,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       perfil,
       cargando: !sesionResuelta || (usuarioId !== null && perfilCargando),
       esSupervisor: perfil?.rol === 'supervisor' && perfil.activo,
+      esLector: perfil?.rol === 'lector',
+      puedeOperar: Boolean(perfil?.activo) && (perfil?.rol === 'cajero' || perfil?.rol === 'supervisor'),
       recargarPerfil: async () => {
         if (usuarioId) setPerfil(await cargarPerfil(usuarioId));
       },

@@ -1,6 +1,6 @@
 # Sistema de Caja: caja diaria y caja chica
 
-Aplicación web que reemplaza los libros Excel con macros del área. Lleva la **caja de fondo (diaria)**, que arrastra el saldo anterior, suma cobros en efectivo y descuenta envíos a gerencia, y la **caja chica**, que cubre gastos. La apertura del fondo se calcula en la base de datos y no admite un monto manual. Desde el 15/09/2026 la caja chica solo admite salidas. Incluye arqueo, cierre, dashboard, histórico, exportación, roles y auditoría.
+Aplicación web que reemplaza los libros Excel con macros del área. Lleva la **caja de fondo (diaria)**, que arrastra el saldo anterior, suma cobros en efectivo y descuenta envíos a gerencia, y la **caja chica**, que cubre gastos. La apertura del fondo se calcula en la base de datos y no admite un monto manual. La caja chica registra egresos y reposiciones desde el banco; desde el 16/09/2026 los retiros de efectivo solo salen de la caja de fondo. Incluye arqueo, cierre, dashboard, histórico, exportación, roles y auditoría.
 
 Base vigente: `CAJA AUTOMATIZADA 2026 (TEMPORAL SOLO POR HOY 14-09).xlsm`, con 125 movimientos hasta el 13/09. El cierre contado de S/ 6,032.90 pasa a caja chica al 14/09; se registra la última salida de S/ 500 para abrir el fondo. Resultado de apertura: **caja chica S/ 5,532.90 y fondo S/ 500**, antes de nuevas operaciones. Los cobros digitales se muestran en ingresos, pero no forman parte del efectivo físico.
 

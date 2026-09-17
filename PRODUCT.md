@@ -17,14 +17,14 @@ Reemplaza dos libros Excel con macros (.xlsm) del área de Rebagliati Diplomados
 
 ## Positioning
 
-Es una herramienta interna hecha a la medida de las reglas reales del área (arrastre del fondo, envíos a gerencia, caja chica solo con salidas desde el 15/09, tolerancia de arqueo), validada contra el Excel original. No es un software contable genérico.
+Es una herramienta interna hecha a la medida de las reglas reales del área (arrastre del fondo, envíos a gerencia, retiros solo desde la caja de fondo desde el 16/09, tolerancia de arqueo), validada contra el Excel original. No es un software contable genérico.
 
 ## Operating Context
 
 - Cobros por Niubiz, Yape, Plin, transferencia y efectivo; pagos mixtos (efectivo + digital).
 - Comprobantes BV/RE con serie y número; estados de sustento (con comprobante, sin comprobante, pendiente).
 - Jornada diaria con apertura automática y cierre con arqueo; el supervisor puede reabrir.
-- Envíos del fondo a GERENCIA; reposiciones y retiros de caja chica.
+- Envíos del fondo a GERENCIA (los retiros solo salen del fondo); egresos y reposiciones de caja chica.
 - Exportación a Excel e impresión del día.
 
 ## Capabilities and Constraints

@@ -1,5 +1,6 @@
+import { clsx } from 'clsx';
 import { useState, type ReactNode } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatearSoles, restar } from '@/dominio';
 import { Segmentado, Tabla, Tarjeta, claseTdNum, claseTd, claseTh, claseThNum } from './ui';
 
@@ -106,46 +107,10 @@ export interface PuntoSaldo {
   saldo: number | null;
 }
 
-export function GraficoSaldoCajaChica({ datos, minimo, maximo, alerta, alto = 260 }: { datos: PuntoSaldo[]; minimo: number; maximo: number; alerta: number | null; alto?: number }) {
-  const valores = datos.map((d) => d.saldo).filter((v): v is number => v !== null);
-  const piso = Math.min(minimo, ...valores) * 0.9;
-  const techo = Math.max(maximo, ...valores) * 1.05;
-  const dominio: [number, number] = [Math.max(0, Math.floor(piso / 500) * 500), Math.ceil(techo / 500) * 500];
-  // Marcas del eje a intervalos parejos (500 o 1,000), no las que reparte Recharts.
-  const paso = dominio[1] - dominio[0] > 4000 ? 1000 : 500;
-  const marcas = Array.from({ length: Math.floor((dominio[1] - dominio[0]) / paso) + 1 }, (_, i) => dominio[0] + i * paso);
-  const etiquetaRef = (texto: string, color: string) => ({ value: texto, position: 'insideTopRight' as const, fontSize: 10.5, fill: color, fontFamily: FUENTE_CIFRAS });
+/** Saldo diario de caja chica. Con altura acotada, el encabezado queda fijo al desplazarse. */
+export function TablaSaldo({ datos, className }: { datos: PuntoSaldo[]; className?: string }) {
   return (
-    <div style={{ height: alto }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={datos} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke={COLORES.grid} strokeDasharray="2 3" />
-          <XAxis dataKey="etiqueta" tickLine={false} axisLine={{ stroke: COLORES.axis }} tick={estiloTick} minTickGap={12} />
-          <YAxis domain={dominio} ticks={marcas} tickLine={false} axisLine={false} tick={estiloTick} tickFormatter={tickSoles} width={60} />
-          <Tooltip formatter={formatoValor} contentStyle={estiloTooltip} />
-          <ReferenceLine y={maximo} stroke={COLORES.muted} strokeWidth={1} label={etiquetaRef(`Máx. ${tickSoles(maximo)}`, COLORES.muted)} />
-          {alerta !== null && <ReferenceLine y={alerta} stroke={COLORES.alerta} strokeWidth={1} strokeDasharray="4 3" label={etiquetaRef(`Alerta ${tickSoles(alerta)}`, COLORES.alerta)} />}
-          <ReferenceLine y={minimo} stroke={COLORES.critico} strokeWidth={1} label={etiquetaRef(`Mín. ${tickSoles(minimo)}`, COLORES.critico)} />
-          <Line
-            type="stepAfter"
-            dataKey="saldo"
-            name="Saldo caja chica"
-            stroke={COLORES.serie1}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, strokeWidth: 2, stroke: COLORES.surface }}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-export function TablaSaldo({ datos }: { datos: PuntoSaldo[] }) {
-  return (
-    <Tabla>
+    <Tabla className={clsx('[&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:bg-papel', className)}>
       <thead>
         <tr>
           <th className={claseTh}>Fecha</th>

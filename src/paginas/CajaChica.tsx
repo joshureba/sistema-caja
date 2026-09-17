@@ -1,4 +1,4 @@
-import { ArrowUpRight, Banknote, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '@/auth/AuthProvider';
@@ -11,7 +11,6 @@ import { Alerta, Boton, Cargando, Cinta, Correlativo, LineaCinta, MontoDoble, Ra
 import { useArqueos, useDatosCaja, useGuardarArqueo, useJornada } from '@/datos/consultas';
 import {
   calcularArqueo,
-  FECHA_CAJA_CHICA_SOLO_EGRESOS,
   conteoVacio,
   filtrarRango,
   formatearFecha,
@@ -28,7 +27,7 @@ import { aNumero } from '@/lib/normalizar';
 import { mensajeError } from '@/lib/supabase';
 
 export default function CajaChica() {
-  const { esSupervisor } = useAuth();
+  const { esSupervisor, puedeOperar } = useAuth();
   const { movimientos, parametros, cargando } = useDatosCaja();
   const hoy = hoyISO();
   const [fecha, setFecha] = useState(hoy);
@@ -50,7 +49,7 @@ export default function CajaChica() {
     setConteo(arqueoChica ? (arqueoChica.conteo as Conteo) : conteoVacio(parametros.denominaciones));
   }, [arqueoChica, fecha, parametros.denominaciones]);
   const resultado = useMemo(() => calcularArqueo(conteo, parametros.denominaciones, dia.saldo_final ?? 0, parametros.tolerancia_arqueo), [conteo, parametros, dia.saldo_final]);
-  const puedeArquear = Boolean(jornada.data) && (jornada.data?.estado === 'ABIERTA' || esSupervisor);
+  const puedeArquear = puedeOperar && Boolean(jornada.data) && (jornada.data?.estado === 'ABIERTA' || esSupervisor);
   const conteoGuardado = Boolean(arqueoChica) && aNumero(arqueoChica?.total_contado) === resultado.total_contado && aNumero(arqueoChica?.total_teorico) === resultado.total_teorico;
 
   async function guardar(nota: string) {
@@ -73,7 +72,6 @@ export default function CajaChica() {
 
   const faltante = dia.saldo_final !== null && dia.saldo_final < parametros.caja_chica_min ? restar(parametros.caja_chica_max, dia.saldo_final) : null;
   const excedente = dia.saldo_final !== null && dia.saldo_final > parametros.caja_chica_max ? restar(dia.saldo_final, parametros.caja_chica_max) : null;
-  const soloSalidas = fecha >= FECHA_CAJA_CHICA_SOLO_EGRESOS;
 
   if (cargando) return <Cargando texto="Imprimiendo la caja chica…" />;
 
@@ -97,12 +95,12 @@ export default function CajaChica() {
       {guardarArqueo.error ? <Alerta tono="peligro" className="mb-4">{mensajeError(guardarArqueo.error)}</Alerta> : null}
       {faltante !== null && (
         <Alerta tono="peligro" titulo="Caja chica bajo el mínimo" className="mb-4">
-          Faltan {formatearSoles(restar(parametros.caja_chica_min, dia.saldo_final ?? 0))} para llegar al mínimo. {soloSalidas ? 'Desde el 15/09 esta caja solo registra salidas.' : `Una reposición de ${formatearSoles(faltante)} la deja en el máximo.`}
+          Faltan {formatearSoles(restar(parametros.caja_chica_min, dia.saldo_final ?? 0))} para llegar al mínimo. Una reposición de {formatearSoles(faltante)} la deja en el máximo.
         </Alerta>
       )}
       {excedente !== null && (
         <Alerta tono="alerta" titulo="Caja chica sobre el máximo" className="mb-4">
-          Hay {formatearSoles(excedente)} por encima del máximo permitido. Registra un retiro hacia el banco.
+          Hay {formatearSoles(excedente)} por encima del máximo permitido; no hace falta reponer hasta que baje.
         </Alerta>
       )}
 
@@ -128,21 +126,14 @@ export default function CajaChica() {
               El control empieza el {formatearFecha(parametros.fecha_corte)} con {formatearSoles(parametros.saldo_inicial_caja_chica)}.
             </p>
           )}
-          <div className="no-imprimir mt-5 grid gap-2 pb-2">
+          {puedeOperar && <div className="no-imprimir mt-5 grid gap-2 pb-2">
             <Boton variante="peligro" icono={<ArrowUpRight className="size-4" aria-hidden />} onClick={() => setFormulario('EGRESO')}>
               Registrar egreso
             </Boton>
-            <div className="grid grid-cols-2 gap-2">
-              {!soloSalidas && (
-                <Boton variante="secundario" icono={<RefreshCw className="size-4" aria-hidden />} onClick={() => setFormulario('REPOSICION_CAJA_CHICA')}>
-                  Reposición
-                </Boton>
-              )}
-              <Boton variante="secundario" icono={<Banknote className="size-4" aria-hidden />} onClick={() => setFormulario('RETIRO')} className={soloSalidas ? 'col-span-2' : undefined}>
-                Retiro
-              </Boton>
-            </div>
-          </div>
+            <Boton variante="secundario" icono={<RefreshCw className="size-4" aria-hidden />} onClick={() => setFormulario('REPOSICION_CAJA_CHICA')}>
+              Registrar reposición
+            </Boton>
+          </div>}
         </Cinta>
 
         <PanelArqueo

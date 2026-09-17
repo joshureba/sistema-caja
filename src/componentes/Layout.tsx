@@ -19,7 +19,7 @@ const enlaces = [
 ];
 
 export function Layout() {
-  const { perfil, esSupervisor, cerrarSesion } = useAuth();
+  const { perfil, esSupervisor, esLector, puedeOperar, cerrarSesion } = useAuth();
   const [abierto, setAbierto] = useState(false);
   const [registrar, setRegistrar] = useState(false);
   const { pathname } = useLocation();
@@ -28,8 +28,9 @@ export function Layout() {
 
   useEffect(() => setAbierto(false), [pathname]);
 
-  // Alt+N abre el registro desde cualquier pantalla.
+  // Alt+N abre el registro desde cualquier pantalla (no para cuentas de solo lectura).
   useEffect(() => {
+    if (!puedeOperar) return;
     const alTeclear = (e: KeyboardEvent) => {
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
@@ -38,11 +39,11 @@ export function Layout() {
     };
     window.addEventListener('keydown', alTeclear);
     return () => window.removeEventListener('keydown', alTeclear);
-  }, []);
+  }, [puedeOperar]);
 
   const estadoJornada = jornadaHoy.isPending ? null : !jornadaHoy.data ? 'SIN ABRIR' : jornadaHoy.data.estado === 'ABIERTA' ? 'ABIERTA' : 'CERRADA · Z';
 
-  const botonRegistrar = (
+  const botonRegistrar = puedeOperar ? (
     <button
       type="button"
       onClick={() => setRegistrar(true)}
@@ -54,6 +55,12 @@ export function Layout() {
       <span className="flex-1">Registrar</span>
       <Tecla className="text-tinta-3">Alt+N</Tecla>
     </button>
+  ) : (
+    <p className="rounded-[3px] border border-dashed border-campo-tinta/35 px-3 py-2 text-[12.5px] leading-snug text-campo-tinta">
+      <span className="cifra font-semibold tracking-wide text-white">SOLO LECTURA</span>
+      <br />
+      Puedes ver toda la caja; no registrar ni modificar.
+    </p>
   );
 
   const navegacion = (
@@ -96,7 +103,7 @@ export function Layout() {
     <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-4">
       <div className="min-w-0">
         <p className="truncate text-[14px] font-semibold text-white">{perfil?.nombre ?? 'Usuario'}</p>
-        <p className="text-[12.5px] text-campo-tinta">{esSupervisor ? 'Supervisor' : 'Cajero'}</p>
+        <p className="text-[12.5px] text-campo-tinta">{esSupervisor ? 'Supervisor' : esLector ? 'Solo lectura' : 'Cajero'}</p>
       </div>
       <button
         type="button"
@@ -134,9 +141,11 @@ export function Layout() {
           <p className="font-semibold text-white">Sistema de Caja</p>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setRegistrar(true)} className="inline-flex size-10 cursor-pointer items-center justify-center rounded-[3px] bg-papel text-sello" aria-label="Registrar movimiento">
-            <Plus className="size-5" strokeWidth={2.5} aria-hidden />
-          </button>
+          {puedeOperar && (
+            <button type="button" onClick={() => setRegistrar(true)} className="inline-flex size-10 cursor-pointer items-center justify-center rounded-[3px] bg-papel text-sello" aria-label="Registrar movimiento">
+              <Plus className="size-5" strokeWidth={2.5} aria-hidden />
+            </button>
+          )}
           <button type="button" onClick={() => setAbierto((v) => !v)} className="inline-flex size-10 cursor-pointer items-center justify-center rounded-[3px] text-white hover:bg-campo-2" aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={abierto}>
             {abierto ? <X className="size-6" aria-hidden /> : <Menu className="size-6" aria-hidden />}
           </button>
@@ -158,7 +167,7 @@ export function Layout() {
         </div>
       </main>
 
-      <FormularioMovimiento abierto={registrar} onCerrar={() => setRegistrar(false)} />
+      {puedeOperar && <FormularioMovimiento abierto={registrar} onCerrar={() => setRegistrar(false)} />}
     </div>
   );
 }

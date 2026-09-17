@@ -11,7 +11,8 @@ import {
   ESTADOS_SUSTENTO,
   esSalidaDelFondo,
   FECHA_FONDO_SOLO_INGRESOS,
-  FECHA_CAJA_CHICA_SOLO_EGRESOS,
+  FECHA_RETIROS_SOLO_FONDO,
+  esRetiroDeCajaChica,
   ETIQUETA_CAJA,
   ETIQUETA_DESTINO,
   ETIQUETA_ORIGEN,
@@ -35,6 +36,9 @@ import { Alerta, AreaTexto, Boton, Campo, Casilla, Entrada, Modal, Selector, Tec
 const cadena = z.string().trim().max(200).optional();
 
 const RESPONSABLE_OTROS = 'OTROS';
+/** Serie de comprobante que usa el área; viene puesta en cada movimiento nuevo con comprobante. */
+const SERIE_POR_DEFECTO = 'EB01';
+const llevaComprobante = (tipo: TipoMovimiento) => tipo === 'INGRESO' || tipo === 'EGRESO';
 
 const esquemaBase = z
   .object({
@@ -69,8 +73,8 @@ function crearEsquema(requiereResponsable: boolean) {
   return esquemaBase.superRefine((v, ctx) => {
     if (requiereResponsable && !v.responsable) ctx.addIssue({ code: 'custom', path: ['responsable'], message: 'Elige quién hace el movimiento' });
     if (v.responsable === RESPONSABLE_OTROS && !v.responsable_otro?.trim()) ctx.addIssue({ code: 'custom', path: ['responsable_otro'], message: 'Escribe el nombre del responsable' });
-    if (v.fecha >= FECHA_CAJA_CHICA_SOLO_EGRESOS && v.tipo === 'REPOSICION_CAJA_CHICA') {
-      ctx.addIssue({ code: 'custom', path: ['origen'], message: 'Desde el 15/09 la caja chica solo admite salidas.' });
+    if (esRetiroDeCajaChica({ ...v, caja_retiro: v.caja_retiro || null })) {
+      ctx.addIssue({ code: 'custom', path: ['caja_retiro'], message: 'Los retiros solo salen de la caja de fondo. Un gasto de caja chica se registra como egreso.' });
     }
     if (esSalidaDelFondo({ ...v, origen: v.origen || null, caja_retiro: v.caja_retiro || null, destino: v.destino || null })) {
       ctx.addIssue({ code: 'custom', path: [v.tipo === 'RETIRO' ? 'destino' : 'origen'], message: 'La caja de fondo solo permite salidas hacia gerencia.' });
@@ -144,7 +148,7 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
     area: '',
     estado_sustento: ESTADO_POR_DEFECTO[tipo],
     comprobante: tipo === 'INGRESO' ? 'BV' : tipo === 'EGRESO' ? 'RE' : '',
-    serie: '',
+    serie: llevaComprobante(tipo) ? SERIE_POR_DEFECTO : '',
     numero: '',
     ruc_dni: '',
     nombre: '',
@@ -157,8 +161,8 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
     monto_efectivo: '',
     mixto: false,
     origen: 'BANCO',
-    caja_retiro: 'CHICA',
-    destino: 'BANCO',
+    caja_retiro: 'DIARIA',
+    destino: 'GERENCIA',
     responsable: '',
     responsable_otro: '',
     ...preset,
@@ -241,6 +245,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<Valores>({ resolver, defaultValues: iniciales, mode: 'onTouched' });
@@ -262,6 +267,13 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   const medioPago = watch('medio_pago');
   const mixto = watch('mixto');
   const responsable = watch('responsable');
+  // El n.º de operación solo aplica a pagos digitales (o mixtos) y a reposiciones por transferencia.
+  // Al editar se muestra si el movimiento ya tenía uno, para no perderlo sin verlo.
+  const conOperacion =
+    tipo === 'REPOSICION_CAJA_CHICA' || (tipo === 'INGRESO' && (mixto || medioPago !== 'EFECTIVO')) || Boolean(movimiento?.num_operacion);
+  useEffect(() => {
+    if (!conOperacion) setValue('num_operacion', '');
+  }, [conOperacion, setValue]);
   const jornada = useJornada(fecha);
   const jornadaCerrada = jornada.data?.estado === 'CERRADA';
   const bloqueado = jornadaCerrada && !esSupervisor;
@@ -280,6 +292,8 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
     if (!movimiento) {
       setValue('estado_sustento', ESTADO_POR_DEFECTO[nuevo]);
       setValue('comprobante', nuevo === 'INGRESO' ? 'BV' : nuevo === 'EGRESO' ? 'RE' : '');
+      // Reposiciones y retiros no llevan comprobante: su serie oculta no debe guardarse.
+      setValue('serie', llevaComprobante(nuevo) ? getValues('serie') || SERIE_POR_DEFECTO : '');
       if (nuevo !== 'INGRESO') setValue('mixto', false);
     }
   }
@@ -321,7 +335,7 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
       <form id={idFormulario} onSubmit={handleSubmit(enviar)} className="space-y-5" noValidate>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tipo de movimiento">
-            {TIPOS_MOVIMIENTO.filter((t) => t !== 'REPOSICION_CAJA_CHICA' || fecha < FECHA_CAJA_CHICA_SOLO_EGRESOS || tipo === t).map((t) => {
+            {TIPOS_MOVIMIENTO.map((t) => {
               const { Icono, activo } = ESTILO_TIPO[t];
               return (
                 <button
@@ -437,10 +451,11 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
             )}
             {tipo === 'RETIRO' && (
               <>
-                <Campo etiqueta="Sale de" requerido error={errors.caja_retiro?.message}>
-                  <Selector {...register('caja_retiro')}>
-                    <option value="CHICA">{ETIQUETA_CAJA.CHICA}</option>
+                <Campo etiqueta="Sale de" requerido error={errors.caja_retiro?.message} ayuda={fecha >= FECHA_RETIROS_SOLO_FONDO ? 'Lo que sale de caja chica se registra como egreso' : undefined}>
+                  <Selector {...register('caja_retiro')} aria-invalid={Boolean(errors.caja_retiro)}>
                     <option value="DIARIA">{ETIQUETA_CAJA.DIARIA}</option>
+                    {/* Solo el histórico (antes del 16/09) conserva retiros desde caja chica. */}
+                    {(fecha < FECHA_RETIROS_SOLO_FONDO || movimiento?.caja_retiro === 'CHICA') && <option value="CHICA">{ETIQUETA_CAJA.CHICA}</option>}
                   </Selector>
                 </Campo>
                 <Campo etiqueta="Destino" requerido error={errors.destino?.message}>
@@ -454,8 +469,8 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                 </Campo>
               </>
             )}
-            {(esIngreso || tipo === 'REPOSICION_CAJA_CHICA') && (
-              <Campo etiqueta="N.º de operación" ayuda="Para pagos digitales o transferencias">
+            {conOperacion && (
+              <Campo etiqueta="N.º de operación" ayuda={tipo === 'REPOSICION_CAJA_CHICA' ? 'De la transferencia del banco' : 'Del pago digital'}>
                 <Entrada {...register('num_operacion')} className="cifra text-[13px]" />
               </Campo>
             )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/movimientos-excel.json';
 import { PARAMETROS_POR_DEFECTO as p, type Movimiento } from './tipos';
-import { esSalidaDelFondo, movimientosDesdeCorte } from './movimientos';
+import { esRetiroDeCajaChica, esSalidaDelFondo, movimientosDesdeCorte } from './movimientos';
 import { resumenPeriodo } from './resumen';
 import { saldoCajaChica, saldoCajaDiaria, resumenCajaDiaria, resumenFondoAcumulado } from './saldos';
 import { totalConteo } from './arqueo';
@@ -71,6 +71,18 @@ describe('Excel temporal del 14/09 y separación definitiva', () => {
     expect(esSalidaDelFondo(base)).toBe(false);
     expect(esSalidaDelFondo({ ...base, tipo: 'REPOSICION_CAJA_CHICA', origen: 'CAJA_DIARIA' })).toBe(true);
     expect(esSalidaDelFondo({ ...base, caja_retiro: 'DIARIA', destino: 'GERENCIA' })).toBe(false);
+  });
+  // Regla del 17/09: los retiros solo salen del fondo desde el 16/09 (el retiro de excedente de caja chica
+  // del 15/09 es real y se conserva) y la caja chica vuelve a reponerse desde el banco.
+  it('solo el fondo admite retiros desde el 16/09 y la reposición de caja chica vuelve a sumar', () => {
+    expect(esRetiroDeCajaChica({ ...base, fecha: '2026-09-16' })).toBe(true);
+    expect(esRetiroDeCajaChica({ ...base, fecha: '2026-09-15' })).toBe(false);
+    expect(esRetiroDeCajaChica({ ...base, fecha: '2026-09-16', caja_retiro: 'DIARIA' })).toBe(false);
+    expect(esRetiroDeCajaChica({ ...base, fecha: '2026-09-16', tipo: 'EGRESO', caja_retiro: null })).toBe(false);
+    const reposicion: Movimiento = { ...base, id: 129, fecha: '2026-09-17', tipo: 'REPOSICION_CAJA_CHICA', monto: 300, caja_retiro: null, destino: null, origen: 'BANCO' };
+    expect(esSalidaDelFondo(reposicion)).toBe(false);
+    expect(saldoCajaChica([...movimientos, base, reposicion], p, '2026-09-17')).toBe(5832.9);
+    expect(saldoCajaDiaria([...movimientos, base, reposicion], p, '2026-09-17')).toBe(500);
   });
   it('arrastra el saldo luego de enviar a gerencia y no descuenta de caja chica', () => {
     const cobro: Movimiento = { ...movimientos[0], fecha: '2026-09-15', monto_efectivo: 300, monto_digital: 150 };

@@ -15,7 +15,7 @@ import { mensajeError } from '@/lib/supabase';
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
 export default function Jornada() {
-  const { perfil, usuario, esSupervisor } = useAuth();
+  const { perfil, usuario, esSupervisor, puedeOperar } = useAuth();
   const { movimientos, parametros, cargando } = useDatosCaja();
   const hoy = hoyISO();
   const [fecha, setFecha] = useState(hoy);
@@ -47,7 +47,7 @@ export default function Jornada() {
 
   const abierta = jornada.data?.estado === 'ABIERTA';
   const cerrada = jornada.data?.estado === 'CERRADA';
-  const puedeEditar = Boolean(jornada.data) && (abierta || esSupervisor);
+  const puedeEditar = puedeOperar && Boolean(jornada.data) && (abierta || esSupervisor);
   const arqueoGuardadoCoincide =
     Boolean(arqueoDiaria) && aNumero(arqueoDiaria?.total_contado) === resultado.total_contado && aNumero(arqueoDiaria?.total_teorico) === resultado.total_teorico;
 
@@ -108,9 +108,11 @@ export default function Jornada() {
         acciones={
           <>
             <NavegadorDia fecha={fecha} hoy={hoy} onCambio={setFecha} etiqueta="Fecha de la jornada" />
-            <Boton variante="secundario" icono={<Send className="size-4" aria-hidden />} onClick={() => setEnviarGerencia(true)} disabled={!puedeEditar}>
-              Enviar a gerencia
-            </Boton>
+            {puedeOperar && (
+              <Boton variante="secundario" icono={<Send className="size-4" aria-hidden />} onClick={() => setEnviarGerencia(true)} disabled={!puedeEditar}>
+                Enviar a gerencia
+              </Boton>
+            )}
             <Boton variante="secundario" icono={<Printer className="size-4" aria-hidden />} onClick={() => window.print()} disabled={!jornada.data}>
               Imprimir
             </Boton>
@@ -140,7 +142,7 @@ export default function Jornada() {
                 Ya hay {delDia.length} movimiento{delDia.length === 1 ? '' : 's'} registrado{delDia.length === 1 ? '' : 's'} en esta fecha; al abrir la jornada quedarán vinculados a ella.
               </Alerta>
             )}
-            <Boton
+            {puedeOperar && <Boton
               className="mt-2"
               tamano="lg"
               icono={<Unlock className="size-4" aria-hidden />}
@@ -150,7 +152,7 @@ export default function Jornada() {
               }}
             >
               Abrir jornada del {formatearFecha(fecha, 'diaMes')}
-            </Boton>
+            </Boton>}
           </div>
         </Cinta>
       ) : (
@@ -176,8 +178,8 @@ export default function Jornada() {
                 {jornada.data.observacion && <p className="mt-1 text-[14px] text-tinta-2">Observación: {jornada.data.observacion}</p>}
               </div>
               <div className="no-imprimir flex flex-wrap items-center gap-3">
-                {abierta && !arqueoDiaria && <p className="text-[13px] text-tinta-3">Guarda el arqueo para emitir el cierre.</p>}
-                {abierta && (
+                {puedeOperar && abierta && !arqueoDiaria && <p className="text-[13px] text-tinta-3">Guarda el arqueo para emitir el cierre.</p>}
+                {puedeOperar && abierta && (
                   <Boton
                     variante="exito"
                     icono={<Lock className="size-4" aria-hidden />}

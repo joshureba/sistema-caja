@@ -1,0 +1,10 @@
+# Archivos que no se suben a Vercel en `vercel --prod`
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+supabase/.temp
+supabase/.branches
+.impeccable
+.claude

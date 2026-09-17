@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { InsigniaEstadoCajaChica, MedidorCajaChica } from '@/componentes/CajaChicaResumen';
 import { Encabezado } from '@/componentes/Layout';
 import { SelectorPeriodo } from '@/componentes/SelectorPeriodo';
-import { GraficoSaldoCajaChica, TablaSaldo, TarjetaGrafico, type PuntoSaldo } from '@/componentes/graficos';
+import { TablaSaldo, type PuntoSaldo } from '@/componentes/graficos';
 import { Alerta, Cargando, Cinta, Insignia, LineaCinta, MontoDoble, RayaCinta, Tabla, Tarjeta, claseTd, claseTdNum, claseTh, claseThNum } from '@/componentes/ui';
 import { useDatosCaja, useJornada } from '@/datos/consultas';
 import {
@@ -204,19 +204,18 @@ export default function Dashboard() {
         </Tarjeta>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <TarjetaGrafico
+          <Tarjeta
             className="lg:col-span-2"
             titulo="Saldo de caja chica"
             subtitulo={`Rango permitido: ${formatearSoles(parametros.caja_chica_min)} a ${formatearSoles(parametros.caja_chica_max)}`}
-            grafico={
-              serieSaldo.length ? (
-                <GraficoSaldoCajaChica datos={serieSaldo} minimo={parametros.caja_chica_min} maximo={parametros.caja_chica_max} alerta={parametros.caja_chica_alerta} />
-              ) : (
-                <p className="py-10 text-center text-[14px] text-tinta-3">Sin datos de caja chica en este período.</p>
-              )
-            }
-            tabla={<TablaSaldo datos={serieSaldo} />}
-          />
+            sinRelleno
+          >
+            {serieSaldo.length ? (
+              <TablaSaldo datos={serieSaldo} className="max-h-[22rem] overflow-y-auto" />
+            ) : (
+              <p className="px-5 py-10 text-center text-[14px] text-tinta-3">Sin datos de caja chica en este período.</p>
+            )}
+          </Tarjeta>
 
           <Tarjeta titulo="Ingresos por canal" subtitulo="Período seleccionado">
             {resumen.por_medio_pago.length === 0 ? (
