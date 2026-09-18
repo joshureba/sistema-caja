@@ -122,6 +122,7 @@ export default function Movimientos() {
           Retiro: m.tipo === 'RETIRO' ? m.monto : '',
           'Origen / caja': m.origen ? ETIQUETA_ORIGEN[m.origen] : m.caja_retiro ? ETIQUETA_CAJA[m.caja_retiro] : '',
           Destino: m.destino ? ETIQUETA_DESTINO[m.destino] : '',
+          Banco: m.banco ?? '',
           Observación: m.observacion ?? '',
           Anulado: m.anulado ? 'SÍ' : '',
         })),
@@ -305,7 +306,12 @@ export default function Movimientos() {
                     </td>
                     <td className={claseTd}>
                       <InsigniaTipo tipo={m.tipo} />
-                      {m.tipo === 'RETIRO' && m.caja_retiro && <span className="mt-1 block text-[12px] text-tinta-3">de {ETIQUETA_CAJA[m.caja_retiro].toLowerCase()}</span>}
+                      {m.tipo === 'RETIRO' && m.caja_retiro && (
+                        <span className="mt-1 block text-[12px] text-tinta-3">
+                          de {ETIQUETA_CAJA[m.caja_retiro].toLowerCase()}
+                          {m.destino && <> a {m.banco ?? ETIQUETA_DESTINO[m.destino].toLowerCase()}</>}
+                        </span>
+                      )}
                       {m.tipo === 'REPOSICION_CAJA_CHICA' && m.origen && <span className="mt-1 block text-[12px] text-tinta-3">desde {ETIQUETA_ORIGEN[m.origen].toLowerCase()}</span>}
                       {(m.comprobante || m.serie || m.numero) && (
                         <span className="cifra mt-1 block text-[11.5px] whitespace-nowrap text-tinta-3 2xl:hidden">{[m.comprobante, [m.serie, m.numero].filter(Boolean).join('-')].filter(Boolean).join(' ')}</span>

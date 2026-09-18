@@ -230,6 +230,7 @@ export type Database = {
           anulado_motivo: string | null
           anulado_por: string | null
           area: string | null
+          banco: string | null
           caja_retiro: Database["public"]["Enums"]["tipo_caja"] | null
           comprobante: string | null
           creado_en: string
@@ -265,6 +266,7 @@ export type Database = {
           anulado_motivo?: string | null
           anulado_por?: string | null
           area?: string | null
+          banco?: string | null
           caja_retiro?: Database["public"]["Enums"]["tipo_caja"] | null
           comprobante?: string | null
           creado_en?: string
@@ -302,6 +304,7 @@ export type Database = {
           anulado_motivo?: string | null
           anulado_por?: string | null
           area?: string | null
+          banco?: string | null
           caja_retiro?: Database["public"]["Enums"]["tipo_caja"] | null
           comprobante?: string | null
           creado_en?: string
@@ -523,7 +526,7 @@ export type Database = {
       estado_arqueo: "CUADRA" | "REVISAR"
       estado_jornada: "ABIERTA" | "CERRADA"
       estado_sustento: "CON COMPROBANTE" | "SIN COMPROBANTE" | "PENDIENTE"
-      origen_reposicion: "BANCO" | "CAJA_DIARIA"
+      origen_reposicion: "BANCO" | "CAJA_DIARIA" | "GERENCIA" | "CONTADOR"
       rol_usuario: "cajero" | "supervisor" | "lector"
       tipo_caja: "DIARIA" | "CHICA"
       tipo_movimiento: "INGRESO" | "EGRESO" | "REPOSICION_CAJA_CHICA" | "RETIRO"
@@ -662,7 +665,7 @@ export const Constants = {
       estado_arqueo: ["CUADRA", "REVISAR"],
       estado_jornada: ["ABIERTA", "CERRADA"],
       estado_sustento: ["CON COMPROBANTE", "SIN COMPROBANTE", "PENDIENTE"],
-      origen_reposicion: ["BANCO", "CAJA_DIARIA"],
+      origen_reposicion: ["BANCO", "CAJA_DIARIA", "GERENCIA", "CONTADOR"],
       rol_usuario: ["cajero", "supervisor", "lector"],
       tipo_caja: ["DIARIA", "CHICA"],
       tipo_movimiento: ["INGRESO", "EGRESO", "REPOSICION_CAJA_CHICA", "RETIRO"],

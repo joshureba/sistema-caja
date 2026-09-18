@@ -87,6 +87,16 @@ describe('Excel temporal del 14/09 y separación definitiva', () => {
     expect(saldoCajaChica([...movimientos, base, reposicion], p, '2026-09-17')).toBe(5832.9);
     expect(saldoCajaDiaria([...movimientos, base, reposicion], p, '2026-09-17')).toBe(500);
   });
+  // Regla del 18/09: gerencia y el contador también reponen la caja chica, en efectivo y sin tocar el fondo.
+  it('la reposición de gerencia o del contador solo sube la caja chica', () => {
+    const deGerencia: Movimiento = { ...base, id: 130, fecha: '2026-09-18', tipo: 'REPOSICION_CAJA_CHICA', monto: 200, caja_retiro: null, destino: null, origen: 'GERENCIA' };
+    const delContador: Movimiento = { ...deGerencia, id: 131, monto: 300, origen: 'CONTADOR' };
+    expect(esSalidaDelFondo(deGerencia)).toBe(false);
+    expect(esSalidaDelFondo(delContador)).toBe(false);
+    const lista = [...movimientos, base, deGerencia, delContador];
+    expect(saldoCajaChica(lista, p, '2026-09-18')).toBe(6032.9);
+    expect(saldoCajaDiaria(lista, p, '2026-09-18')).toBe(500);
+  });
   it('arrastra el saldo luego de enviar a gerencia y no descuenta de caja chica', () => {
     const cobro: Movimiento = { ...movimientos[0], fecha: '2026-09-15', monto_efectivo: 300, monto_digital: 150 };
     const envio: Movimiento = { ...base, fecha: '2026-09-15', monto: 600, caja_retiro: 'DIARIA', destino: 'GERENCIA' };

@@ -27,9 +27,20 @@ export type Turno = (typeof TURNOS)[number];
 export const ESTADOS_SUSTENTO = ['CON COMPROBANTE', 'SIN COMPROBANTE', 'PENDIENTE'] as const;
 export type EstadoSustento = (typeof ESTADOS_SUSTENTO)[number];
 
-export const ORIGENES_REPOSICION = ['BANCO', 'CAJA_DIARIA'] as const;
+export const ORIGENES_REPOSICION = ['BANCO', 'CAJA_DIARIA', 'GERENCIA', 'CONTADOR'] as const;
 export type OrigenReposicion = (typeof ORIGENES_REPOSICION)[number];
-export const ETIQUETA_ORIGEN: Record<OrigenReposicion, string> = { BANCO: 'Banco', CAJA_DIARIA: 'Caja diaria' };
+export const ETIQUETA_ORIGEN: Record<OrigenReposicion, string> = {
+  BANCO: 'Banco',
+  CAJA_DIARIA: 'Caja diaria',
+  GERENCIA: 'Gerencia',
+  CONTADOR: 'Contador',
+};
+/** Orígenes vigentes de la caja chica: `CAJA_DIARIA` solo sobrevive en el histórico. */
+export const ORIGENES_REPOSICION_VIGENTES: readonly OrigenReposicion[] = ['BANCO', 'GERENCIA', 'CONTADOR'];
+/** Solo la transferencia del banco trae n.º de operación; gerencia y el contador entregan efectivo en mano. */
+export function esOrigenConOperacion(origen: string | null | undefined): boolean {
+  return origen === 'BANCO';
+}
 
 export const DESTINOS_RETIRO = ['BANCO', 'OTRO', 'GERENCIA'] as const;
 export type DestinoRetiro = (typeof DESTINOS_RETIRO)[number];
@@ -77,6 +88,8 @@ export interface Movimiento {
   caja_retiro: TipoCaja | null;
   /** Solo RETIRO: a dónde va el efectivo. */
   destino: DestinoRetiro | null;
+  /** Solo RETIRO con destino BANCO: en qué banco se depositó. */
+  banco: string | null;
   observacion: string | null;
   /** Quién hizo el movimiento en ventanilla; los importados del Excel no lo tienen. */
   responsable?: string | null;

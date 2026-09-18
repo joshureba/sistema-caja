@@ -9,6 +9,7 @@ import { useCatalogos, useGuardarMovimiento, useJornada, useParametros } from '@
 import {
   DESTINOS_RETIRO,
   esDestinoDeFondo,
+  esOrigenConOperacion,
   ESTADOS_SUSTENTO,
   esSalidaDelFondo,
   FECHA_FONDO_SOLO_INGRESOS,
@@ -19,6 +20,7 @@ import {
   ETIQUETA_ORIGEN,
   ETIQUETA_TIPO_FORMULARIO,
   ORIGENES_REPOSICION,
+  ORIGENES_REPOSICION_VIGENTES,
   TIPOS_MOVIMIENTO,
   TURNOS,
   formatearFecha,
@@ -65,6 +67,7 @@ const esquemaBase = z
     origen: z.enum(ORIGENES_REPOSICION).or(z.literal('')),
     caja_retiro: z.enum(['DIARIA', 'CHICA']).or(z.literal('')),
     destino: z.enum(DESTINOS_RETIRO).or(z.literal('')),
+    banco: cadena,
     responsable: z.string(),
     responsable_otro: cadena,
   });
@@ -96,6 +99,7 @@ function crearEsquema(requiereResponsable: boolean) {
     if (v.tipo === 'RETIRO') {
       if (!v.caja_retiro) ctx.addIssue({ code: 'custom', path: ['caja_retiro'], message: 'Indica de qué caja sale' });
       if (!v.destino) ctx.addIssue({ code: 'custom', path: ['destino'], message: 'Indica el destino' });
+      if (v.destino === 'BANCO' && !v.banco?.trim()) ctx.addIssue({ code: 'custom', path: ['banco'], message: 'Indica a qué banco va el depósito' });
     }
   });
 }
@@ -136,6 +140,7 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
       origen: m.origen ?? '',
       caja_retiro: m.caja_retiro ?? '',
       destino: m.destino ?? '',
+      banco: m.banco ?? '',
       responsable: !m.responsable ? '' : conocido ? m.responsable : RESPONSABLE_OTROS,
       responsable_otro: m.responsable && !conocido ? m.responsable : '',
     };
@@ -164,6 +169,7 @@ function valoresPorDefecto(movimiento: Movimiento | undefined, turnoAuto: Turno,
     origen: 'BANCO',
     caja_retiro: 'DIARIA',
     destino: 'GERENCIA',
+    banco: '',
     responsable: '',
     responsable_otro: '',
     ...preset,
@@ -200,6 +206,7 @@ export function aInsertar(v: Valores, jornadaId: number | null): MovimientoInser
     origen: null,
     caja_retiro: null,
     destino: null,
+    banco: null,
   };
   if (v.tipo === 'INGRESO') {
     if (v.mixto) {
@@ -217,6 +224,7 @@ export function aInsertar(v: Valores, jornadaId: number | null): MovimientoInser
   if (v.tipo === 'RETIRO') {
     base.caja_retiro = v.caja_retiro || null;
     base.destino = v.destino || null;
+    base.banco = v.destino === 'BANCO' ? limpiar(v.banco) : null;
   }
   return base;
 }
@@ -263,12 +271,17 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   const fecha = watch('fecha');
   const cajaRetiro = watch('caja_retiro');
   const destino = watch('destino');
+  const origen = watch('origen');
   useEffect(() => {
     // El fondo solo sale hacia gerencia o al banco; si quedó otro destino, vuelve al primero.
     if (tipo === 'RETIRO' && cajaRetiro === 'DIARIA' && fecha >= FECHA_FONDO_SOLO_INGRESOS && !esDestinoDeFondo(destino)) {
       setValue('destino', 'GERENCIA');
     }
   }, [tipo, cajaRetiro, destino, fecha, setValue]);
+  // El banco solo acompaña a un depósito; si el destino cambia, el dato deja de aplicar.
+  useEffect(() => {
+    if (tipo !== 'RETIRO' || destino !== 'BANCO') setValue('banco', '');
+  }, [tipo, destino, setValue]);
   const medioPago = watch('medio_pago');
   const mixto = watch('mixto');
   const responsable = watch('responsable');
@@ -276,9 +289,11 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
   // Al editar se muestra si el movimiento ya tenía uno, para no perderlo sin verlo.
   const conOperacion =
     tipo === 'REPOSICION_CAJA_CHICA' || (tipo === 'INGRESO' && (mixto || medioPago !== 'EFECTIVO')) || Boolean(movimiento?.num_operacion);
+  // Gerencia y el contador entregan el efectivo en mano: no hay número de operación que anotar.
+  const operacionHabilitada = tipo !== 'REPOSICION_CAJA_CHICA' || esOrigenConOperacion(origen);
   useEffect(() => {
-    if (!conOperacion) setValue('num_operacion', '');
-  }, [conOperacion, setValue]);
+    if (!conOperacion || !operacionHabilitada) setValue('num_operacion', '');
+  }, [conOperacion, operacionHabilitada, setValue]);
   const jornada = useJornada(fecha);
   const jornadaCerrada = jornada.data?.estado === 'CERRADA';
   const bloqueado = jornadaCerrada && !esSupervisor;
@@ -445,8 +460,8 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
             {tipo === 'REPOSICION_CAJA_CHICA' && (
               <Campo etiqueta="Origen del dinero" requerido error={errors.origen?.message}>
                 <Selector {...register('origen')}>
-                  {/* Las cajas son independientes: la caja chica solo se repone desde el banco. */}
-                  {ORIGENES_REPOSICION.filter((o) => o === 'BANCO' || movimiento?.origen === o).map((o) => (
+                  {/* Las cajas son independientes: la caja de fondo nunca repone la caja chica. */}
+                  {ORIGENES_REPOSICION.filter((o) => ORIGENES_REPOSICION_VIGENTES.includes(o) || movimiento?.origen === o).map((o) => (
                     <option key={o} value={o}>
                       {ETIQUETA_ORIGEN[o]}
                     </option>
@@ -472,11 +487,28 @@ export function FormularioMovimiento({ abierto, onCerrar, onGuardado, movimiento
                     ))}
                   </Selector>
                 </Campo>
+                {destino === 'BANCO' && (
+                  <Campo etiqueta="Banco" requerido error={errors.banco?.message}>
+                    <Selector {...register('banco')} aria-invalid={Boolean(errors.banco)}>
+                      <option value="">Elige…</option>
+                      {opciones('BANCO', movimiento?.banco ?? undefined)}
+                    </Selector>
+                  </Campo>
+                )}
               </>
             )}
             {conOperacion && (
-              <Campo etiqueta="N.º de operación" ayuda={tipo === 'REPOSICION_CAJA_CHICA' ? 'De la transferencia del banco' : 'Del pago digital'}>
-                <Entrada {...register('num_operacion')} className="cifra text-[13px]" />
+              <Campo
+                etiqueta="N.º de operación"
+                ayuda={
+                  tipo !== 'REPOSICION_CAJA_CHICA'
+                    ? 'Del pago digital'
+                    : operacionHabilitada
+                      ? 'De la transferencia del banco'
+                      : `Solo para transferencias del banco; ${ETIQUETA_ORIGEN[origen || 'GERENCIA'].toLowerCase()} entrega el efectivo en mano`
+                }
+              >
+                <Entrada {...register('num_operacion')} disabled={!operacionHabilitada} className="cifra text-[13px]" />
               </Campo>
             )}
             {esIngreso && (

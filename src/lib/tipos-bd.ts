@@ -19,7 +19,7 @@ export type ObservacionArqueoBD = Tables<'observaciones_arqueo'>;
 
 export type RolUsuario = Database['public']['Enums']['rol_usuario'];
 
-export const TIPOS_CATALOGO = ['RESPONSABLE', 'AREA', 'MEDIO_PAGO', 'CUENTA', 'COMPROBANTE'] as const;
+export const TIPOS_CATALOGO = ['RESPONSABLE', 'AREA', 'MEDIO_PAGO', 'CUENTA', 'COMPROBANTE', 'BANCO'] as const;
 export type TipoCatalogo = (typeof TIPOS_CATALOGO)[number];
 export const ETIQUETA_CATALOGO: Record<TipoCatalogo, string> = {
   RESPONSABLE: 'Responsables de movimientos',
@@ -27,5 +27,6 @@ export const ETIQUETA_CATALOGO: Record<TipoCatalogo, string> = {
   MEDIO_PAGO: 'Medios de pago',
   CUENTA: 'Cuentas',
   COMPROBANTE: 'Tipos de comprobante',
+  BANCO: 'Bancos',
 };
 export type CatalogosPorTipo = Record<TipoCatalogo, CatalogoBD[]>;

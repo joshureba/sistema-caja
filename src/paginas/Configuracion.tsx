@@ -147,7 +147,7 @@ function Parametros() {
 function Catalogos() {
   const catalogos = useCatalogos();
   const guardar = useGuardarCatalogo();
-  const [nuevos, setNuevos] = useState<Record<TipoCatalogo, string>>({ RESPONSABLE: '', AREA: '', MEDIO_PAGO: '', CUENTA: '', COMPROBANTE: '' });
+  const [nuevos, setNuevos] = useState<Record<TipoCatalogo, string>>({ RESPONSABLE: '', AREA: '', MEDIO_PAGO: '', CUENTA: '', COMPROBANTE: '', BANCO: '' });
 
   async function agregar(tipo: TipoCatalogo) {
     const valor = nuevos[tipo].trim().toUpperCase();

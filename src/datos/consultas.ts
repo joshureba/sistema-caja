@@ -54,7 +54,7 @@ export function useCatalogos() {
     queryKey: claves.catalogos,
     queryFn: async () => {
       const filas = await lanzar<CatalogoBD[]>(supabase.from('catalogos').select('*').order('tipo').order('orden').order('valor'));
-      const porTipo: CatalogosPorTipo = { RESPONSABLE: [], AREA: [], MEDIO_PAGO: [], CUENTA: [], COMPROBANTE: [] };
+      const porTipo: CatalogosPorTipo = { RESPONSABLE: [], AREA: [], MEDIO_PAGO: [], CUENTA: [], COMPROBANTE: [], BANCO: [] };
       for (const fila of filas) {
         const tipo = fila.tipo as TipoCatalogo;
         if (tipo in porTipo) porTipo[tipo].push(fila);
